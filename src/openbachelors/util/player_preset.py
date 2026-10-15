@@ -215,8 +215,10 @@ def build_post_tutorial_template(sandbox_template):
 
     owned_char_ids = set(POST_TUTORIAL_BASE_CHARS)
     tmpl["inventory"] = {}
-    tmpl["troop"]["spOperator"] = {}
-    tmpl["mission"]["pinnedSpecialOperator"] = None
+    # spOperator is account-wide special-operator protocol data, not the owned
+    # operator roster.  Keep it together with its string-valued mission pin;
+    # clearing the map and replacing the pin with null produces a sync payload
+    # that does not satisfy the client's static account-data contract.
     for field in (
         "gold",
         "androidDiamond",
