@@ -6,6 +6,7 @@
 /mod_windows/
 /console.txt
 /battle_audit/
+/drop_data/
 /test/.battle_protocol_audit_test_*.jsonl
 
 # Created by https://www.toptal.com/developers/gitignore/api/python
