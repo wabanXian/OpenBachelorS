@@ -46,7 +46,6 @@ from ..const.filepath import (
     REPLAY_DIRPATH,
     MULTI_REPLAY_DIRPATH,
     EXTRA_SAVE_FILEPATH,
-    MULTI_EXTRA_SAVE_DIRPATH,
     ROGUELIKE_TOPIC_TABLE,
     CAMPAIGN_TABLE,
     CRISIS_V2_TABLE,
@@ -64,6 +63,12 @@ from .helper import (
 )
 from .db_manager import IS_DB_READY, get_db_conn_or_pool, create_user_if_necessary
 from .log_helper import IS_DEBUG
+from .player_preset import (
+    PLAYER_PRESETS,
+    POST_TUTORIAL_PRESET,
+    build_post_tutorial_template,
+    get_player_preset,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -711,7 +716,22 @@ def build_player_data_template():
     return player_data_template, char_id_lst
 
 
-player_data_template, char_id_lst = build_player_data_template()
+sandbox_player_data_template, sandbox_char_id_lst = build_player_data_template()
+post_tutorial_player_data_template, post_tutorial_char_id_lst = (
+    build_post_tutorial_template(sandbox_player_data_template)
+)
+player_data_templates = {
+    "sandbox": sandbox_player_data_template,
+    POST_TUTORIAL_PRESET: post_tutorial_player_data_template,
+}
+player_char_id_lists = {
+    "sandbox": sandbox_char_id_lst,
+    POST_TUTORIAL_PRESET: post_tutorial_char_id_lst,
+}
+
+player_preset = get_player_preset(const_json_loader[CONFIG_JSON])
+player_data_template = player_data_templates[player_preset]
+char_id_lst = player_char_id_lists[player_preset]
 
 
 class DeltaJsonBaseState(Enum):
@@ -1100,7 +1120,7 @@ class PlayerData(OverlayJson, SavableThing):
     DEFAULT_TOKEN = "_"
 
     @classmethod
-    async def create(cls, player_id=None, request=None):
+    async def create(cls, player_id=None, request=None, preset=None):
         if request is not None:
             token = request.headers.get("secret", cls.DEFAULT_TOKEN)
         else:
@@ -1112,11 +1132,20 @@ class PlayerData(OverlayJson, SavableThing):
         username = get_username_by_token(token)
 
         config = const_json_loader[CONFIG_JSON]
+        if preset is None:
+            preset = get_player_preset(config)
+        elif preset not in PLAYER_PRESETS:
+            raise ValueError(
+                f"unknown player preset {preset!r}; expected one of {sorted(PLAYER_PRESETS)}"
+            )
+        storage_username = (
+            username if preset != POST_TUTORIAL_PRESET else f"{preset}::{username}"
+        )
         if config["multi_user"]:
             if IS_DB_READY:
-                await create_user_if_necessary(username)
+                await create_user_if_necessary(storage_username)
 
-                save_aggregator = DBSaveAggregator(username)
+                save_aggregator = DBSaveAggregator(storage_username)
 
                 await save_aggregator.load()
 
@@ -1127,25 +1156,36 @@ class PlayerData(OverlayJson, SavableThing):
                 ) = await asyncio.gather(
                     DBBasedDeltaJson.create(
                         "delta",
-                        username,
+                        storage_username,
                         save_aggregator,
                     ),
                     DBBasedDeltaJson.create(
                         "pending_delta",
-                        username,
+                        storage_username,
                         save_aggregator,
                     ),
                     DBExtraSave.create(
-                        username,
+                        storage_username,
                         save_aggregator,
                     ),
                 )
 
                 battle_replay_manager = DBBattleReplayManager(
-                    username,
+                    storage_username,
                 )
             else:
                 save_aggregator = None
+
+                if preset == POST_TUTORIAL_PRESET:
+                    account_save_dirpath = os.path.join(
+                        MULTI_USER_SAV_DIRPATH, "presets", preset, username
+                    )
+                    replay_dirpath = os.path.join(account_save_dirpath, "replay")
+                else:
+                    account_save_dirpath = os.path.join(
+                        MULTI_USER_SAV_DIRPATH, username
+                    )
+                    replay_dirpath = os.path.join(MULTI_REPLAY_DIRPATH, username)
 
                 (
                     sav_delta_json,
@@ -1153,37 +1193,59 @@ class PlayerData(OverlayJson, SavableThing):
                     extra_save,
                 ) = await asyncio.gather(
                     FileBasedDeltaJson.create(
-                        os.path.join(MULTI_USER_SAV_DIRPATH, username, "delta.json")
+                        os.path.join(account_save_dirpath, "delta.json")
                     ),
                     FileBasedDeltaJson.create(
                         os.path.join(
-                            MULTI_USER_SAV_DIRPATH, username, "pending_delta.json"
+                            account_save_dirpath, "pending_delta.json"
                         )
                     ),
                     ExtraSave.create(
-                        os.path.join(MULTI_EXTRA_SAVE_DIRPATH, username, "extra.json")
+                        os.path.join(account_save_dirpath, "extra.json")
                     ),
                 )
 
                 battle_replay_manager = BattleReplayManager(
-                    os.path.join(MULTI_REPLAY_DIRPATH, username)
+                    replay_dirpath
                 )
         else:
             save_aggregator = None
+
+            if preset == POST_TUTORIAL_PRESET:
+                save_dirpath = os.path.join("sav", "presets", preset)
+                delta_filepath = os.path.join(save_dirpath, "delta.json")
+                pending_delta_filepath = os.path.join(
+                    save_dirpath, "pending_delta.json"
+                )
+                extra_filepath = os.path.join(save_dirpath, "extra.json")
+                replay_dirpath = os.path.join(save_dirpath, "replay")
+            else:
+                delta_filepath = SAV_DELTA_JSON
+                pending_delta_filepath = SAV_PENDING_DELTA_JSON
+                extra_filepath = EXTRA_SAVE_FILEPATH
+                replay_dirpath = REPLAY_DIRPATH
 
             (
                 sav_delta_json,
                 sav_pending_delta_json,
                 extra_save,
             ) = await asyncio.gather(
-                FileBasedDeltaJson.create(SAV_DELTA_JSON),
-                FileBasedDeltaJson.create(SAV_PENDING_DELTA_JSON),
-                ExtraSave.create(EXTRA_SAVE_FILEPATH),
+                FileBasedDeltaJson.create(delta_filepath),
+                FileBasedDeltaJson.create(pending_delta_filepath),
+                ExtraSave.create(extra_filepath),
             )
 
-            battle_replay_manager = BattleReplayManager(REPLAY_DIRPATH)
+            battle_replay_manager = BattleReplayManager(replay_dirpath)
 
-        json_with_delta = OverlayJson(player_data_template, sav_delta_json)
+        if preset == POST_TUTORIAL_PRESET:
+            stored_preset = extra_save.save_obj.get("player_preset")
+            if stored_preset not in (None, preset):
+                raise RuntimeError(
+                    f"save preset mismatch: expected {preset}, found {stored_preset}"
+                )
+            extra_save.save_obj["player_preset"] = preset
+
+        json_with_delta = OverlayJson(player_data_templates[preset], sav_delta_json)
         player_data = cls(json_with_delta, sav_pending_delta_json)
 
         player_data.save_aggregator = save_aggregator
