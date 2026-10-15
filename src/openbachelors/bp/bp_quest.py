@@ -14,6 +14,7 @@ from ..util.helper import (
     get_assist_lst_idx_from_friend_uid_ext,
 )
 from ..util.battle_log_logger import log_battle_log_if_necessary
+from ..util.battle_protocol_audit import battle_protocol_audit
 from ..util.assist_ext import profession_lst, profession_assist_lst_dict
 
 
@@ -60,6 +61,7 @@ async def quest_battleStart(player_data, request: Request):
         "inApProtectPeriod": false,
         "notifyPowerScoreNotEnoughIfFailed": false,
     }
+    await battle_protocol_audit.record_battle_start(request, request_json, response)
     return response
 
 
@@ -68,7 +70,10 @@ async def quest_battleStart(player_data, request: Request):
 async def quest_battleFinish(player_data, request: Request):
     request_json = await request.json()
 
-    log_battle_log_if_necessary(player_data, request_json["data"])
+    # When protocol auditing is active, decrypted data belongs exclusively in
+    # its protected JSONL output rather than the ordinary debug log.
+    if not battle_protocol_audit.enabled:
+        log_battle_log_if_necessary(player_data, request_json["data"])
 
     response = {
         "result": 0,
@@ -95,6 +100,9 @@ async def quest_battleFinish(player_data, request: Request):
             }
         },
     }
+    await battle_protocol_audit.record_battle_finish(
+        player_data, request, request_json, response
+    )
     return response
 
 
@@ -206,6 +214,7 @@ async def quest_saveBattleReplay(player_data, request: Request):
     response = {}
 
     if player_data.extra_save.save_obj.get("cur_stage_id", None) is None:
+        await battle_protocol_audit.record_replay_save(request, request_json, response)
         return response
 
     stage_id = player_data.extra_save.save_obj["cur_stage_id"]
@@ -216,6 +225,7 @@ async def quest_saveBattleReplay(player_data, request: Request):
 
     player_data["dungeon"]["stages"][stage_id]["hasBattleReplay"] = 1
 
+    await battle_protocol_audit.record_replay_save(request, request_json, response)
     return response
 
 
@@ -243,6 +253,7 @@ async def quest_finishStoryStage(player_data, request: Request):
         "unlockStages": [],
         "alert": [],
     }
+    await battle_protocol_audit.record_story_finish(request, request_json, response)
     return response
 
 

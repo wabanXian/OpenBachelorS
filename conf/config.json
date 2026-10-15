@@ -8,6 +8,10 @@
     "multi_user": true,
     "redirect_asset": false,
     "debug": true,
+    "battle_protocol_audit": {
+        "enabled": false,
+        "path": "battle_audit/battle_protocol.jsonl"
+    },
     "mod": false,
     "assist_ext": true,
     "faketime": -1,
