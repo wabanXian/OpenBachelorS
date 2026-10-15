@@ -348,9 +348,9 @@ def build_post_tutorial_template(sandbox_template):
             "status": 3,
         }
     for group_id in POST_TUTORIAL_GUIDE_GROUPS:
-        tmpl["mission"]["missionGroups"][group_id] = {
-            "groupId": group_id,
-            "state": 3,
-        }
+        # MissionGroupState is a client enum serialized as a JSON primitive.
+        # The group id is already the dictionary key; wrapping it in an object
+        # makes syncData fail client-side deserialization.
+        tmpl["mission"]["missionGroups"][group_id] = 3
 
     return ConstJson(tmpl), ConstJson(sorted(owned_char_ids, key=get_char_num_id))

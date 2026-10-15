@@ -108,7 +108,8 @@ def test_post_tutorial_progress_missions_and_operator_loadouts_are_valid():
 
     for group_id, state in preset["mission"]["missionGroups"].items():
         assert group_id in mission_table["missionGroups"]
-        assert state == {"groupId": group_id, "state": 3}
+        assert type(state) is int
+        assert state == 3
 
     for inst_id, char in preset["troop"]["chars"].items():
         source = sandbox["troop"]["chars"][inst_id]
@@ -155,8 +156,8 @@ def test_completed_missions_have_rewards_and_claimed_state():
         assert preset["mission"]["missions"]["GUIDE"][mission_id]["status"] == 3
         assert any(row["source"] == f"mission:{mission_id}" for row in ledger)
     assert "guide_19" not in preset["mission"]["missions"]["GUIDE"]
-    assert preset["mission"]["missionGroups"]["guide_g_1"]["state"] == 3
-    assert preset["mission"]["missionGroups"]["guide_g_2"]["state"] == 3
+    assert preset["mission"]["missionGroups"]["guide_g_1"] == 3
+    assert preset["mission"]["missionGroups"]["guide_g_2"] == 3
     assert "guide_g_3" not in preset["mission"]["missionGroups"]
 
 
@@ -235,6 +236,10 @@ async def test_sync_data_response_preserves_post_tutorial_contract(
         assert len(user["troop"]["chars"]) == 15
         assert user["status"]["mainStageProgress"] == "main_01-10"
         assert len(user["mission"]["missions"]["GUIDE"]) == 18
+        assert user["mission"]["missionGroups"] == {
+            "guide_g_1": 3,
+            "guide_g_2": 3,
+        }
         pinned = user["mission"]["pinnedSpecialOperator"]
         assert isinstance(pinned, str)
         assert pinned in user["troop"]["spOperator"]
