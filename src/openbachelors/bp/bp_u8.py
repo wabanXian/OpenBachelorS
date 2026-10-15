@@ -41,7 +41,7 @@ async def u8_pay_getAllProductList(request: Request):
     response = {"productList": []}
     return response
 
-
+@router.get("/u8/user/info/v2/agreement_version")
 @router.post("/u8/user/auth/v1/agreement_version")
 @router.get("/u8/user/auth/v1/agreement_version")
 async def u8_user_auth_v1_agreement_version(request: Request):
