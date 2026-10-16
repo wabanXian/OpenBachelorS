@@ -47,6 +47,7 @@ from .bp import (
 )
 from .util.db_manager import get_db_conn_or_pool, IS_DB_READY, clear_db_pool
 from .util.helper import get_httpx_client, is_app_frozen
+from .util.http_trace import HttpTraceMiddleware, configure_game_logging
 
 
 @asynccontextmanager
@@ -67,6 +68,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+configure_game_logging()
+app.add_middleware(HttpTraceMiddleware)
 
 
 app.include_router(bp_account.router)
