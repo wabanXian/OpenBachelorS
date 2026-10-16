@@ -17,23 +17,19 @@ def build_audit():
     rewards, unresolved = build_post_tutorial_reward_ledger()
     return {
         "preset": "post_tutorial",
+        "initializationMode": "fresh_account_before_tutorial",
         "completedStages": POST_TUTORIAL_COMPLETED_STAGES,
         "completedGuideMissionGroups": POST_TUTORIAL_GUIDE_GROUPS,
         "completedGuideMissions": POST_TUTORIAL_GUIDE_MISSIONS,
         "rewards": rewards,
         "unresolvedDeterministicRewards": unresolved,
-        "excludedRewards": [
-            {
-                "source": "stage_table.stageDropInfo display rewards",
-                "reason": "NORMAL and ADDITIONAL drops have no deterministic count",
-            }
-        ],
+        "excludedRewards": [],
     }
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate the auditable post_tutorial reward ledger"
+        description="Generate the auditable fresh-account post_tutorial ledger"
     )
     parser.add_argument("--output", default=DEFAULT_OUTPUT)
     args = parser.parse_args()

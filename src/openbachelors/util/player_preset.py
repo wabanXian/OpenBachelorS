@@ -1,11 +1,6 @@
 from copy import deepcopy
 
-from ..const.filepath import (
-    MISSION_TABLE,
-    STAGE_TABLE,
-    STORY_TABLE,
-    TMPL_JSON,
-)
+from ..const.filepath import GAMEDATA_CONST, TMPL_JSON
 from .const_json_loader import ConstJson, const_json_loader
 from .helper import get_char_num_id
 
@@ -14,44 +9,11 @@ SANDBOX_PRESET = "sandbox"
 POST_TUTORIAL_PRESET = "post_tutorial"
 PLAYER_PRESETS = {SANDBOX_PRESET, POST_TUTORIAL_PRESET}
 
-POST_TUTORIAL_MAIN_STAGES = [
-    *(f"main_00-{i:02d}" for i in range(1, 12)),
-    *(f"main_01-{i:02d}" for i in range(1, 11)),
-]
-POST_TUTORIAL_TRAINING_STAGES = [f"tr_{i:02d}" for i in range(1, 11)]
-POST_TUTORIAL_COMPLETED_STAGES = [
-    *POST_TUTORIAL_MAIN_STAGES,
-    *POST_TUTORIAL_TRAINING_STAGES,
-]
-
-POST_TUTORIAL_GUIDE_GROUPS = ["guide_g_1", "guide_g_2"]
-POST_TUTORIAL_GUIDE_MISSIONS = [f"guide_{i}" for i in range(1, 19)]
-
-# Amiya is part of the base account identity. The remaining operators are the
-# deterministic ONCE rewards of the completed tutorial/main stages.
-POST_TUTORIAL_BASE_CHARS = ["char_002_amiya"]
-
-# Deliberate, non-official compensation for resources consumed by the skipped
-# mandatory upgrade prompts. Keeping this separate makes the balance choice
-# auditable instead of pretending the resource tables contain those costs.
-POST_TUTORIAL_SUBSIDY = [
-    {"type": "GOLD", "id": "4001", "count": 40000},
-    {"type": "CARD_EXP", "id": "2001", "count": 20},
-    {"type": "CARD_EXP", "id": "2002", "count": 10},
-]
-
-
-REWARD_TARGETS = {
-    "GOLD": "status.gold",
-    "DIAMOND": "status.androidDiamond",
-    "DIAMOND_SHD": "status.diamondShard",
-    "TKT_GACHA": "status.gachaTicket",
-    "TKT_RECRUIT": "status.recruitLicense",
-    "TKT_INST_FIN": "status.instantFinishTicket",
-    "CARD_EXP": "inventory",
-    "MATERIAL": "inventory",
-    "CHAR": "troop.chars",
-}
+# Public compatibility constants for the audit tool. The preset now starts
+# before tutorial progression, so none of these collections has entries.
+POST_TUTORIAL_COMPLETED_STAGES = []
+POST_TUTORIAL_GUIDE_GROUPS = []
+POST_TUTORIAL_GUIDE_MISSIONS = []
 
 
 def get_player_preset(config):
@@ -66,98 +28,12 @@ def get_player_preset(config):
     return preset
 
 
-def _reward_entry(source, reward, quantity_basis):
-    reward = deepcopy(reward)
-    reward.setdefault("count", 1)
-    return {
-        "source": source,
-        "type": reward["type"],
-        "id": reward["id"],
-        "count": reward["count"],
-        "target": REWARD_TARGETS.get(reward["type"]),
-        "quantityBasis": quantity_basis,
-    }
-
-
 def build_post_tutorial_reward_ledger():
-    mission_table = const_json_loader[MISSION_TABLE].copy()
-    stage_table = const_json_loader[STAGE_TABLE].copy()
-    ledger = []
-    unresolved = []
-
-    for stage_id in POST_TUTORIAL_COMPLETED_STAGES:
-        stage = stage_table["stages"][stage_id]
-        display_rewards = (stage.get("stageDropInfo") or {}).get(
-            "displayRewards"
-        ) or []
-        for reward in display_rewards:
-            drop_type = reward.get("dropType")
-            if drop_type not in {"ONCE", "COMPLETE"}:
-                continue
-            if reward["type"] not in REWARD_TARGETS:
-                unresolved.append(
-                    {
-                        "source": f"stage:{stage_id}:{drop_type}",
-                        "reward": deepcopy(reward),
-                        "reason": "unsupported reward type",
-                    }
-                )
-                continue
-            ledger.append(
-                _reward_entry(
-                    f"stage:{stage_id}:{drop_type}",
-                    reward,
-                    "one displayRewards entry denotes one deterministic reward",
-                )
-            )
-
-    completed_main_stages = set(POST_TUTORIAL_MAIN_STAGES)
-    for mission_id, mission in mission_table["missions"].items():
-        if mission.get("type") != "MAIN":
-            continue
-        params = mission.get("param") or []
-        if not any(param in completed_main_stages for param in params):
-            continue
-        for reward in mission.get("rewards") or []:
-            ledger.append(
-                _reward_entry(
-                    f"mission:{mission_id}", reward, "mission_table.rewards.count"
-                )
-            )
-
-    for mission_id in POST_TUTORIAL_GUIDE_MISSIONS:
-        mission = mission_table["missions"][mission_id]
-        for reward in mission.get("rewards") or []:
-            ledger.append(
-                _reward_entry(
-                    f"mission:{mission_id}", reward, "mission_table.rewards.count"
-                )
-            )
-
-    for group_id in POST_TUTORIAL_GUIDE_GROUPS:
-        group = mission_table["missionGroups"][group_id]
-        for reward in group.get("rewards") or []:
-            ledger.append(
-                _reward_entry(
-                    f"mission_group:{group_id}",
-                    reward,
-                    "mission_table.missionGroups.rewards.count",
-                )
-            )
-
-    for reward in POST_TUTORIAL_SUBSIDY:
-        ledger.append(
-            _reward_entry(
-                "preset:skipped_upgrade_compensation",
-                reward,
-                "explicit post_tutorial opening subsidy",
-            )
-        )
-
-    return ledger, unresolved
+    """Return the intentionally empty reward ledger for a fresh account."""
+    return [], []
 
 
-def _normalise_char(char_obj, level):
+def _normalise_char(char_obj, level=1):
     char_obj = deepcopy(char_obj)
     char_obj["favorPoint"] = 0
     char_obj["potentialRank"] = 0
@@ -181,106 +57,50 @@ def _normalise_char(char_obj, level):
     return char_obj
 
 
-def _add_reward(tmpl, sandbox, entry, owned_char_ids):
-    reward_type = entry["type"]
-    reward_id = entry["id"]
-    count = entry["count"]
-
-    if reward_type == "GOLD":
-        tmpl["status"]["gold"] += count
-    elif reward_type == "DIAMOND":
-        tmpl["status"]["androidDiamond"] += count
-    elif reward_type == "DIAMOND_SHD":
-        tmpl["status"]["diamondShard"] += count
-    elif reward_type == "TKT_GACHA":
-        tmpl["status"]["gachaTicket"] += count
-    elif reward_type == "TKT_RECRUIT":
-        tmpl["status"]["recruitLicense"] += count
-    elif reward_type == "TKT_INST_FIN":
-        tmpl["status"]["instantFinishTicket"] += count
-    elif reward_type in {"CARD_EXP", "MATERIAL"}:
-        tmpl["inventory"][reward_id] = tmpl["inventory"].get(reward_id, 0) + count
-    elif reward_type == "CHAR":
-        owned_char_ids.add(reward_id)
-    else:
-        raise ValueError(f"unsupported post_tutorial reward type: {reward_type}")
-
-
 def build_post_tutorial_template(sandbox_template):
+    """Build a fresh account while retaining the preset's isolated save space."""
     sandbox = sandbox_template.copy()
     tmpl = const_json_loader[TMPL_JSON].copy()
-    ledger, unresolved = build_post_tutorial_reward_ledger()
-    if unresolved:
-        raise ValueError(f"unresolved deterministic post_tutorial rewards: {unresolved}")
+    game_const = const_json_loader[GAMEDATA_CONST].copy()
 
-    owned_char_ids = set(POST_TUTORIAL_BASE_CHARS)
+    initial_char_ids = list(game_const["initCharIdList"])
+    initial_max_ap = game_const["playerApMap"][0]
+
     tmpl["inventory"] = {}
-    # spOperator is account-wide special-operator protocol data, not the owned
-    # operator roster.  Keep it together with its string-valued mission pin;
-    # clearing the map and replacing the pin with null produces a sync payload
-    # that does not satisfy the client's static account-data contract.
-    for field in (
-        "gold",
-        "androidDiamond",
-        "iosDiamond",
-        "diamondShard",
-        "gachaTicket",
-        "recruitLicense",
-        "instantFinishTicket",
-    ):
-        tmpl["status"][field] = 0
-    for entry in ledger:
-        _add_reward(tmpl, sandbox, entry, owned_char_ids)
-
-    # A modest account state after chapter 1. The reward ledger is applied on
-    # top of these zeroed counters, once, as part of the immutable base template.
     tmpl["status"].update(
         {
-            "level": 10,
+            "level": 1,
             "exp": 0,
-            "ap": 120,
-            "maxAp": 120,
-            "progress": 20300,
-            "mainStageProgress": "main_01-10",
-            "gold": tmpl["status"]["gold"],
-            "gachaTicket": tmpl["status"]["gachaTicket"],
-            "recruitLicense": tmpl["status"]["recruitLicense"],
-            "instantFinishTicket": tmpl["status"]["instantFinishTicket"],
-            "diamondShard": tmpl["status"]["diamondShard"],
-            "androidDiamond": tmpl["status"]["androidDiamond"],
+            "socialPoint": 0,
+            "gachaTicket": 0,
+            "classicGachaTicket": 0,
+            "tenGachaTicket": 0,
+            "classicTenGachaTicket": 0,
+            "instantFinishTicket": 0,
+            "hggShard": 0,
+            "lggShard": 0,
+            "classicShard": 0,
+            "recruitLicense": 0,
+            "progress": 0,
+            "buyApRemainTimes": 0,
+            "apLimitUpFlag": 0,
+            "ap": initial_max_ap,
+            "maxAp": initial_max_ap,
+            "androidDiamond": 0,
             "iosDiamond": 0,
+            "diamondShard": game_const["initPlayerDiamondShard"],
+            "gold": game_const["initPlayerGold"],
+            "practiceTicket": game_const["maxPracticeTicket"],
+            "mainStageProgress": None,
+            "friendNumLimit": game_const["baseMaxFriendNum"],
         }
     )
 
-    # Mark only story/tutorial records whose prerequisites are entirely inside
-    # the skipped range. Later tutorials, stories and activities remain fresh.
-    completed_stage_set = set(POST_TUTORIAL_COMPLETED_STAGES)
-    for story_id, story in const_json_loader[STORY_TABLE].copy().items():
-        if not story_id.lower().startswith(("obt/guide/", "obt/main/", "obt/tutorial/")):
-            continue
-        required_stages = {
-            item["stageId"] for item in story["condition"].get("requiredStages", [])
-        }
-        if required_stages and required_stages.issubset(completed_stage_set):
-            tmpl["status"]["flags"][story_id] = 1
-
-    for stage_id in POST_TUTORIAL_COMPLETED_STAGES:
-        tmpl["dungeon"]["stages"][stage_id] = {
-            "stageId": stage_id,
-            "completeTimes": 1,
-            "startTimes": 1,
-            "practiceTimes": 0,
-            "state": 3,
-            "hasBattleReplay": 0,
-            "noCostCnt": 0,
-        }
-
-    for char_id in sorted(owned_char_ids, key=get_char_num_id):
+    # spOperator is account-wide protocol data rather than the owned roster.
+    # Preserve it and its string-valued mission pin from the base template.
+    for char_id in initial_char_ids:
         char_inst_id = str(get_char_num_id(char_id))
-        level = 20 if char_id == "char_002_amiya" else 10
-        char_obj = _normalise_char(sandbox["troop"]["chars"][char_inst_id], level)
-        if char_id == "char_002_amiya":
-            char_obj["mainSkillLvl"] = 3
+        char_obj = _normalise_char(sandbox["troop"]["chars"][char_inst_id])
         tmpl["troop"]["chars"][char_inst_id] = char_obj
         tmpl["troop"]["charGroup"][char_id] = {"favorPoint": 0}
         tmpl["dexNav"]["character"][char_id] = {
@@ -288,6 +108,7 @@ def build_post_tutorial_template(sandbox_template):
             "count": 1,
             "classicCount": 0,
         }
+
         if char_inst_id in sandbox["building"]["chars"]:
             building_char = deepcopy(sandbox["building"]["chars"][char_inst_id])
             building_char["roomSlotId"] = ""
@@ -302,55 +123,7 @@ def build_post_tutorial_template(sandbox_template):
             tmpl["skin"]["skinTs"][skin_id] = 1700000000
 
     tmpl["troop"]["curCharInstId"] = max(
-        get_char_num_id(char_id) for char_id in owned_char_ids
+        get_char_num_id(char_id) for char_id in initial_char_ids
     ) + 1
 
-    squad_char_ids = [
-        "char_123_fang",
-        "char_192_falco",
-        "char_208_melan",
-        "char_124_kroos",
-        "char_211_adnach",
-        "char_002_amiya",
-        "char_009_12fce",
-        "char_278_orchid",
-        "char_122_beagle",
-        "char_235_jesica",
-        "char_120_hibisc",
-        "char_212_ansel",
-    ]
-    slots = [
-        {"charInstId": get_char_num_id(char_id), "skillIndex": 0, "currentEquip": None}
-        for char_id in squad_char_ids
-    ]
-    for squad in tmpl["troop"]["squads"].values():
-        squad["slots"] = deepcopy(slots)
-
-    mission_table = const_json_loader[MISSION_TABLE].copy()
-    completed_main_stages = set(POST_TUTORIAL_MAIN_STAGES)
-    completed_main_missions = []
-    for mission_id, mission in mission_table["missions"].items():
-        if mission.get("type") != "MAIN":
-            continue
-        if any(param in completed_main_stages for param in (mission.get("param") or [])):
-            completed_main_missions.append(mission_id)
-
-    for mission_id in POST_TUTORIAL_GUIDE_MISSIONS:
-        tmpl["mission"]["missions"]["GUIDE"][mission_id] = {
-            "value": 1,
-            "target": 1,
-            "status": 3,
-        }
-    for mission_id in completed_main_missions:
-        tmpl["mission"]["missions"]["MAIN"][mission_id] = {
-            "value": 1,
-            "target": 1,
-            "status": 3,
-        }
-    for group_id in POST_TUTORIAL_GUIDE_GROUPS:
-        # MissionGroupState is a client enum serialized as a JSON primitive.
-        # The group id is already the dictionary key; wrapping it in an object
-        # makes syncData fail client-side deserialization.
-        tmpl["mission"]["missionGroups"][group_id] = 3
-
-    return ConstJson(tmpl), ConstJson(sorted(owned_char_ids, key=get_char_num_id))
+    return ConstJson(tmpl), ConstJson(initial_char_ids)
