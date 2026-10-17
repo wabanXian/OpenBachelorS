@@ -67,6 +67,19 @@ def build_post_tutorial_template(sandbox_template):
     initial_max_ap = game_const["playerApMap"][0]
 
     tmpl["inventory"] = {}
+    # The first main stage must be present for the chapter screen to expose it.
+    # State 0 is unlocked/not cleared; no completion or reward is implied.
+    tmpl["dungeon"]["stages"] = {
+        "main_00-01": {
+            "stageId": "main_00-01",
+            "completeTimes": 0,
+            "startTimes": 0,
+            "practiceTimes": 0,
+            "state": 0,
+            "hasBattleReplay": 0,
+            "noCostCnt": 0,
+        }
+    }
     tmpl["status"].update(
         {
             "level": 1,

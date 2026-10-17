@@ -69,6 +69,11 @@ from .player_preset import (
     build_post_tutorial_template,
     get_player_preset,
 )
+from .tutorial_debug import event as tutorial_event, player_snapshot
+from .battle_settlement import (
+    reconcile_pending_session,
+    repair_missing_main_one_mission,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -778,6 +783,11 @@ class DeltaJson:
         if key in self.deleted_dict:
             del self.deleted_dict[key]
 
+    def prune_empty_branches(self):
+        recursive_prune_empty_delta_branches(
+            self.modified_dict, self.deleted_dict
+        )
+
     def get_child_delta_json(self, key):
         if key not in self.modified_dict:
             self.modified_dict[key] = {}
@@ -824,8 +834,27 @@ class DeltaJson:
 EmptyConstJson = ConstJson({})
 
 
+def recursive_prune_empty_delta_branches(modified_dict, deleted_dict):
+    """Remove read-only traversal artifacts without erasing intentional clears."""
+    for key in list(set(modified_dict) & set(deleted_dict)):
+        modified = modified_dict[key]
+        deleted = deleted_dict[key]
+        if not isinstance(modified, dict) or not isinstance(deleted, dict):
+            continue
+        recursive_prune_empty_delta_branches(modified, deleted)
+        if not deleted:
+            deleted_dict.pop(key, None)
+        if not modified and not deleted:
+            modified_dict.pop(key, None)
+
+
 def recursive_delete(base_dict: dict, deleted_dict: dict):
     for key, value in deleted_dict.items():
+        # Traversing an overlay-created dictionary records an empty deletion
+        # branch even when that key never existed in the immutable template.
+        # Deleting such a dynamic key from the template is correctly a no-op.
+        if key not in base_dict:
+            continue
         if isinstance(value, dict):
             recursive_delete(base_dict[key], value)
         else:
@@ -842,6 +871,22 @@ def recursive_update(base_dict: dict, overlay_dict: dict):
             recursive_update(base_dict[key], value)
         else:
             base_dict[key] = value
+
+
+def repair_missing_char_equip_fields(player_data):
+    """Add protocol-required empty module fields to legacy dynamic operators."""
+    repaired = []
+    for inst_id, char in player_data["troop"]["chars"]:
+        missing = []
+        if "currentEquip" not in char:
+            char["currentEquip"] = None
+            missing.append("currentEquip")
+        if "equip" not in char:
+            char["equip"] = {}
+            missing.append("equip")
+        if missing:
+            repaired.append({"charInstId": int(inst_id), "fields": missing})
+    return repaired
 
 
 class OverlayJson(ConstJsonLike):
@@ -920,6 +965,12 @@ class OverlayJson(ConstJsonLike):
                 self.delta_json.set_key_primitive_value(
                     key, {}, key in self.const_json_like
                 )
+                # A newly assigned empty mapping is real protocol data, not a
+                # traversal artifact. Avoid reopening it through __getitem__,
+                # which would otherwise create a matching empty delete branch
+                # and make pruning erase the assignment.
+                if not value:
+                    return
             child_overlay_json = self[key]
             for k, v in value.items():
                 child_overlay_json[k] = v
@@ -1254,15 +1305,50 @@ class PlayerData(OverlayJson, SavableThing):
         player_data.battle_replay_manager = battle_replay_manager
         player_data.extra_save = extra_save
         player_data.json_with_delta = json_with_delta
+        player_data.preset = preset
+        recovery = reconcile_pending_session(player_data)
+        schema_repairs = repair_missing_char_equip_fields(player_data)
+        if preset == POST_TUTORIAL_PRESET and repair_missing_main_one_mission(
+            player_data
+        ):
+            schema_repairs.append(
+                {
+                    "missionId": "main_1",
+                    "reason": "main_00-01_passed_before_mission_support",
+                }
+            )
+        # Iterating overlay-only operators creates empty traversal branches;
+        # keep actual schema repairs while removing those read artifacts.
+        sav_delta_json.prune_empty_branches()
+        sav_pending_delta_json.prune_empty_branches()
+
+        if request is not None:
+            snapshot = player_snapshot(player_data)
+            tutorial_event(
+                request,
+                "player_data_loaded",
+                preset=preset,
+                isolatedPresetStorage=preset == POST_TUTORIAL_PRESET,
+                state=snapshot,
+                firstKnownTrigger={
+                    "storyId": "obt/guide/l0-0/0_home_ui",
+                    "serverCondition": snapshot["progress"] == 0,
+                    "clientInternalCondition": "unknown",
+                },
+                battleSessionRecovery=recovery,
+                schemaRepairs=schema_repairs,
+            )
 
         return player_data
 
     async def save(self):
-        await asyncio.gather(
-            self.sav_delta_json.save(),
-            self.sav_pending_delta_json.save(),
-            self.extra_save.save(),
-        )
+        self.sav_delta_json.prune_empty_branches()
+        self.sav_pending_delta_json.prune_empty_branches()
+        # Player mutations are durable before a battle session journal is
+        # marked settled. A crash therefore leaves a replayable absolute plan.
+        await self.sav_delta_json.save()
+        await self.sav_pending_delta_json.save()
+        await self.extra_save.save()
 
         if self.save_aggregator is not None:
             await self.save_aggregator.save()
@@ -1277,6 +1363,8 @@ class PlayerData(OverlayJson, SavableThing):
         self.sav_pending_delta_json.reset_key(key)
 
     def build_delta_response(self):
+        self.sav_delta_json.prune_empty_branches()
+        self.sav_pending_delta_json.prune_empty_branches()
         helper_dict = {}
         helper_str = "_"
         recursive_flush_deleted_dict(
@@ -1354,6 +1442,17 @@ def player_data_decorator(func):
 
         delta_response = player_data.build_delta_response()
         await player_data.save()
+
+        if request is not None:
+            tutorial_event(
+                request,
+                "player_data_persisted",
+                endpoint=request.url.path,
+                preset=getattr(player_data, "preset", None),
+                modifiedTopLevel=sorted(delta_response["modified"]),
+                deletedTopLevel=sorted(delta_response["deleted"]),
+                state=player_snapshot(player_data),
+            )
 
         json_response["playerDataDelta"] = delta_response
 

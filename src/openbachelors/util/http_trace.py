@@ -138,6 +138,17 @@ class HttpTraceMiddleware:
             raise
         finally:
             elapsed_ms = (time.perf_counter() - started) * 1000
+            response_summary = (
+                f"<suppressed syncData body: {response_bytes} bytes>"
+                if path == "/account/syncData"
+                else _body_summary(
+                    response_buffer,
+                    response_bytes,
+                    response_type,
+                    self.max_body_bytes,
+                    self.max_log_chars,
+                )
+            )
             logger.debug("[%s] --> %s %s body=%s", trace_id, method, path,
                          _body_summary(request_buffer, request_bytes, request_type,
                                        self.max_body_bytes, self.max_log_chars))
@@ -145,5 +156,4 @@ class HttpTraceMiddleware:
                          trace_id, method, path,
                          response_status if response_status is not None else "no-response",
                          elapsed_ms,
-                         _body_summary(response_buffer, response_bytes, response_type,
-                                       self.max_body_bytes, self.max_log_chars))
+                         response_summary)

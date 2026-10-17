@@ -12,9 +12,19 @@ from ..util.helper import (
     convert_char_obj_to_assist_char_obj,
     get_friend_uid_from_assist_lst_idx_ext,
     get_assist_lst_idx_from_friend_uid_ext,
+    decode_battle_log,
 )
-from ..util.battle_log_logger import log_battle_log_if_necessary
 from ..util.battle_protocol_audit import battle_protocol_audit
+from ..util.tutorial_debug import event, player_snapshot
+from ..util.battle_settlement import (
+    CLIENT_BATTLE_ID,
+    activate_battle_start,
+    commit_battle_finish,
+    prepare_battle_finish,
+    prepare_battle_start,
+    reject_response,
+)
+from ..util.player_preset import POST_TUTORIAL_PRESET
 from ..util.assist_ext import profession_lst, profession_assist_lst_dict
 
 
@@ -27,7 +37,20 @@ async def quest_squadFormation(player_data, request: Request):
     request_json = await request.json()
 
     squad_id = request_json["squadId"]
+    before_slots = player_data["troop"]["squads"][squad_id]["slots"].copy()
     player_data["troop"]["squads"][squad_id]["slots"] = request_json["slots"]
+
+    event(
+        request,
+        "tutorial_squad_formation",
+        squadId=squad_id,
+        beforeCharInstIds=[
+            slot["charInstId"] for slot in before_slots if slot is not None
+        ],
+        afterCharInstIds=[
+            slot["charInstId"] for slot in request_json["slots"] if slot is not None
+        ],
+    )
 
     response = {}
     return response
@@ -49,18 +72,84 @@ async def quest_changeSquadName(player_data, request: Request):
 @player_data_decorator
 async def quest_battleStart(player_data, request: Request):
     request_json = await request.json()
-
     stage_id = request_json["stageId"]
     player_data.extra_save.save_obj["cur_stage_id"] = stage_id
 
+    if getattr(player_data, "preset", None) == POST_TUTORIAL_PRESET:
+        session, correlation = prepare_battle_start(player_data, request_json)
+        if session is None:
+            response = {
+                "result": 1,
+                "battleId": CLIENT_BATTLE_ID,
+                "apFailReturn": 0,
+                "isApProtect": 0,
+                "inApProtectPeriod": false,
+                "notifyPowerScoreNotEnoughIfFailed": false,
+                "settlementError": correlation,
+            }
+            event(
+                request,
+                "battle_session_rejected",
+                stageId=stage_id,
+                reason=correlation,
+            )
+            await battle_protocol_audit.record_battle_start(
+                request, request_json, response
+            )
+            return response
+        if correlation == "new_session":
+            # Write-ahead session journal. The plan uses absolute values and is
+            # safe for PlayerData.create() to replay after a process restart.
+            await player_data.extra_save.save()
+            activate_battle_start(player_data, session)
+
+        response = {
+            "result": 0,
+            "battleId": session["battleId"],
+            "apFailReturn": session["apFailReturn"],
+            "isApProtect": 0,
+            "inApProtectPeriod": false,
+            "notifyPowerScoreNotEnoughIfFailed": false,
+        }
+        event(
+            request,
+            "battle_session_started",
+            battleId=session["battleId"],
+            internalSessionId=session["sessionId"],
+            stageId=stage_id,
+            correlation=correlation,
+            apBefore=session["apBefore"],
+            apCost=session["apCost"],
+            apAfter=session["apBefore"] - session["apCost"],
+            stageStartCount=player_data["dungeon"]["stages"][stage_id][
+                "startTimes"
+            ],
+            ruleSource=session.get("ruleSource"),
+            ruleCompleteness=session.get("ruleCompleteness"),
+        )
+        await battle_protocol_audit.record_battle_start(
+            request, request_json, response
+        )
+        return response
+
+    # Preserve sandbox behaviour while the settlement engine is validated on
+    # the isolated fresh-account preset.
     response = {
         "result": 0,
-        "battleId": "00000000-0000-0000-0000-000000000000",
+        "battleId": CLIENT_BATTLE_ID,
         "apFailReturn": 0,
         "isApProtect": 0,
         "inApProtectPeriod": false,
         "notifyPowerScoreNotEnoughIfFailed": false,
     }
+    event(
+        request,
+        "tutorial_battle_start",
+        stageId=stage_id,
+        state=player_snapshot(player_data),
+        serverEntryDecision="accepted",
+        clientInternalCondition="unknown",
+    )
     await battle_protocol_audit.record_battle_start(request, request_json, response)
     return response
 
@@ -69,11 +158,6 @@ async def quest_battleStart(player_data, request: Request):
 @player_data_decorator
 async def quest_battleFinish(player_data, request: Request):
     request_json = await request.json()
-
-    # When protocol auditing is active, decrypted data belongs exclusively in
-    # its protected JSONL output rather than the ordinary debug log.
-    if not battle_protocol_audit.enabled:
-        log_battle_log_if_necessary(player_data, request_json["data"])
 
     response = {
         "result": 0,
@@ -100,6 +184,82 @@ async def quest_battleFinish(player_data, request: Request):
             }
         },
     }
+    settlement = None
+    decoded = None
+    decode_error = None
+    before_snapshot = player_snapshot(player_data)
+
+    if getattr(player_data, "preset", None) == POST_TUTORIAL_PRESET:
+        try:
+            decoded = decode_battle_log(player_data, request_json["data"])
+        except Exception as exc:
+            decode_error = type(exc).__name__
+            response = reject_response("battle_log_decode_failed")
+        else:
+            settlement = prepare_battle_finish(
+                player_data, decoded, request_json["data"]
+            )
+            if settlement["kind"] == "prepared":
+                session = settlement["session"]
+                # Persist the absolute settlement plan before changing assets.
+                await player_data.extra_save.save()
+                commit_battle_finish(player_data, session)
+                response = settlement["response"]
+            elif settlement["kind"] == "duplicate":
+                response = settlement["response"]
+            else:
+                response = reject_response(settlement["reason"])
+
+        active = player_data.extra_save.save_obj.get(
+            "quest_battle_sessions_v1", {}
+        ).get("active")
+        settled_session = (settlement or {}).get("session", {})
+        decoded_stage_id = (decoded or {}).get("stageId")
+        event(
+            request,
+            "battle_settlement",
+            battleId=(decoded or {}).get("battleId"),
+            internalSessionId=settled_session.get("sessionId")
+            or (active or {}).get("sessionId"),
+            stageId=decoded_stage_id,
+            decodeError=decode_error,
+            settlementKind=(settlement or {}).get("kind", "decode_failed"),
+            rejectionReason=(settlement or {}).get("reason"),
+            resultEvidence=settled_session.get("evidence"),
+            outcome=settled_session.get("outcome"),
+            stars=settled_session.get("stars"),
+            stageBefore=settled_session.get("beforeStage"),
+            stageAfter=(
+                player_data["dungeon"]["stages"][decoded_stage_id].copy()
+                if decoded_stage_id in player_data["dungeon"]["stages"]
+                else None
+            ),
+            rewards=settled_session.get("rewards"),
+            ruleSource=settled_session.get("ruleSource"),
+            ruleCompleteness=settled_session.get("ruleCompleteness"),
+            unlockStages=response.get("unlockStages", []),
+        )
+
+    event(
+        request,
+        "tutorial_battle_finish",
+        stageId=player_data.extra_save.save_obj.get("cur_stage_id"),
+        stateBefore=before_snapshot,
+        stateAfter=player_snapshot(player_data),
+        rewardCount=len(response.get("rewards", []))
+        + len(response.get("firstRewards", [])),
+        progressionApplied=bool(
+            settlement and settlement.get("kind") == "prepared"
+        ),
+        blocker=(
+            None
+            if settlement and settlement.get("kind") in {"prepared", "duplicate"}
+            else response.get("settlementError")
+        ),
+        battleData={
+            "length": len(request_json.get("data", "")),
+        },
+    )
     await battle_protocol_audit.record_battle_finish(
         player_data, request, request_json, response
     )
@@ -111,7 +271,11 @@ async def quest_battleFinish(player_data, request: Request):
 async def quest_battleContinue(player_data, request: Request):
     request_json = await request.json()
 
-    log_battle_log_if_necessary(player_data, request_json["data"])
+    event(
+        request,
+        "battle_continue_unsupported",
+        battleData={"length": len(request_json.get("data", ""))},
+    )
 
     response = {
         "result": 1,
@@ -253,6 +417,15 @@ async def quest_finishStoryStage(player_data, request: Request):
         "unlockStages": [],
         "alert": [],
     }
+    event(
+        request,
+        "tutorial_story_stage_finish",
+        stageId=request_json.get("stageId"),
+        stateBefore=player_snapshot(player_data),
+        stateAfter=player_snapshot(player_data),
+        progressionApplied=False,
+        blocker="story-stage settlement is not implemented",
+    )
     await battle_protocol_audit.record_story_finish(request, request_json, response)
     return response
 

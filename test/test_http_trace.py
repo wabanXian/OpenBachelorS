@@ -80,3 +80,46 @@ async def test_http_trace_preserves_asgi_io_and_logs_payloads():
     assert '"charInstId":2' in lines
     assert '"playerDataDelta"' in lines
     assert "status=200" in lines
+
+
+@pytest.mark.asyncio
+async def test_http_trace_suppresses_complete_sync_data_response():
+    response = json.dumps({"user": {"large": "x" * 1000}}).encode()
+    sent = []
+
+    async def receive():
+        return {"type": "http.request", "body": b"{}", "more_body": False}
+
+    async def send(message):
+        sent.append(message)
+
+    async def app(scope, recv, send_message):
+        await recv()
+        await send_message({"type": "http.response.start", "status": 200,
+                            "headers": [(b"content-type", b"application/json")]})
+        await send_message({"type": "http.response.body", "body": response})
+
+    class Capture(logging.Handler):
+        def __init__(self):
+            super().__init__()
+            self.lines = []
+        def emit(self, record):
+            self.lines.append(record.getMessage())
+
+    capture = Capture()
+    old_level = logger.level
+    logger.addHandler(capture)
+    logger.setLevel(logging.DEBUG)
+    try:
+        middleware = HttpTraceMiddleware(app)
+        middleware.enabled = True
+        await middleware({"type": "http", "method": "POST", "path": "/account/syncData",
+                          "headers": [(b"content-type", b"application/json")]}, receive, send)
+    finally:
+        logger.removeHandler(capture)
+        logger.setLevel(old_level)
+
+    lines = "\n".join(capture.lines)
+    assert "suppressed syncData body" in lines
+    assert '"large"' not in lines
+    assert sent[-1]["body"] == response

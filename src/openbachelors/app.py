@@ -28,6 +28,7 @@ from .bp import (
     bp_gacha,
     bp_general,
     bp_mail,
+    bp_mission,
     bp_pay,
     bp_quest,
     bp_recalRune,
@@ -89,6 +90,7 @@ app.include_router(bp_crisisV2.router)
 app.include_router(bp_gacha.router)
 app.include_router(bp_general.router)
 app.include_router(bp_mail.router)
+app.include_router(bp_mission.router)
 app.include_router(bp_pay.router)
 app.include_router(bp_quest.router)
 app.include_router(bp_recalRune.router)

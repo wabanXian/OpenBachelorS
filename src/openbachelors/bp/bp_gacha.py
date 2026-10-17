@@ -1,3 +1,4 @@
+from copy import deepcopy
 from enum import IntEnum
 import random
 import logging
@@ -15,7 +16,13 @@ from ..const.filepath import (
     GACHA_DATA,
 )
 from ..util.const_json_loader import const_json_loader, ConstJson
-from ..util.player_data import player_data_decorator, char_id_lst as player_char_id_lst
+from ..util.player_data import (
+    char_id_lst as player_char_id_lst,
+    player_data_decorator,
+    sandbox_player_data_template,
+)
+from ..util.player_preset import _normalise_char
+from ..util.tutorial_debug import event, player_snapshot
 from ..util.helper import (
     get_char_num_id,
     get_random_key,
@@ -55,7 +62,7 @@ def get_gacha_bonus_item(char_id):
     return gacha_bonus_item
 
 
-def get_gacha_char_obj(char_id):
+def get_gacha_char_obj(char_id, char_inst_id=None, is_new=0):
     gacha_item_lst = []
 
     gacha_bonus_item = get_gacha_bonus_item(char_id)
@@ -67,14 +74,76 @@ def get_gacha_char_obj(char_id):
         gacha_item_lst.append({"type": "MATERIAL", "id": item_id, "count": 1})
 
     gacha_char_obj = {
-        "charInstId": get_char_num_id(char_id),
+        "charInstId": char_inst_id or get_char_num_id(char_id),
         "charId": char_id,
-        "isNew": 0,
+        "isNew": is_new,
         "itemGet": gacha_item_lst,
         "logInfo": {},
     }
 
     return gacha_char_obj
+
+
+def _add_gacha_items(player_data, items):
+    for item in items:
+        item_type = item["type"]
+        count = item["count"]
+        if item_type == "HGG_SHD":
+            player_data["status"]["hggShard"] += count
+        elif item_type == "LGG_SHD":
+            player_data["status"]["lggShard"] += count
+        elif item_type == "MATERIAL":
+            item_id = item["id"]
+            old_count = (
+                player_data["inventory"][item_id]
+                if item_id in player_data["inventory"]
+                else 0
+            )
+            player_data["inventory"][item_id] = old_count + count
+
+
+def grant_gacha_character(player_data, char_id):
+    """Persist the operator and every account reference returned by gacha."""
+    for inst_id, char in player_data["troop"]["chars"]:
+        if char["charId"] == char_id:
+            result = get_gacha_char_obj(char_id, int(inst_id), is_new=0)
+            _add_gacha_items(player_data, result["itemGet"])
+            return result
+
+    char_inst_id = player_data["troop"]["curCharInstId"]
+    source_inst_id = str(get_char_num_id(char_id))
+    char_obj = _normalise_char(
+        sandbox_player_data_template["troop"]["chars"][source_inst_id].copy()
+    )
+    char_obj["instId"] = char_inst_id
+    player_data["troop"]["chars"][str(char_inst_id)] = char_obj
+    player_data["troop"]["charGroup"][char_id] = {"favorPoint": 0}
+    player_data["troop"]["curCharInstId"] = char_inst_id + 1
+    player_data["dexNav"]["character"][char_id] = {
+        "charInstId": char_inst_id,
+        "count": 1,
+        "classicCount": 0,
+    }
+
+    if source_inst_id in sandbox_player_data_template["building"]["chars"]:
+        building_char = deepcopy(
+            sandbox_player_data_template["building"]["chars"][source_inst_id].copy()
+        )
+        building_char["charInstId"] = char_inst_id
+        building_char["roomSlotId"] = ""
+        building_char["index"] = -1
+        player_data["building"]["chars"][str(char_inst_id)] = building_char
+
+    skin_id = char_obj.get("skin")
+    if skin_id is None and char_obj.get("currentTmpl"):
+        skin_id = char_obj["tmpl"][char_obj["currentTmpl"]]["skinId"]
+    if skin_id:
+        player_data["skin"]["characterSkins"][skin_id] = 1
+        player_data["skin"]["skinTs"][skin_id] = int(faketime())
+
+    result = get_gacha_char_obj(char_id, char_inst_id, is_new=1)
+    _add_gacha_items(player_data, result["itemGet"])
+    return result
 
 
 class NormalGachaBasicManager:
@@ -424,7 +493,7 @@ class AdvancedGachaBasicManager:
     def gacha_advancedGacha(self):
         char_id = self.get_advanced_gacha_result()
 
-        gacha_char_obj = get_gacha_char_obj(char_id)
+        gacha_char_obj = grant_gacha_character(self.player_data, char_id)
 
         self.response.update(
             {
@@ -436,7 +505,9 @@ class AdvancedGachaBasicManager:
     def gacha_tenAdvancedGacha(self):
         char_id_lst = [self.get_advanced_gacha_result() for i in range(10)]
 
-        gacha_char_obj_lst = [get_gacha_char_obj(char_id) for char_id in char_id_lst]
+        gacha_char_obj_lst = [
+            grant_gacha_character(self.player_data, char_id) for char_id in char_id_lst
+        ]
 
         self.response.update(
             {
@@ -1603,11 +1674,26 @@ def get_advanced_gacha_manager(player_data, request_json, response):
 async def gacha_advancedGacha(player_data, request: Request):
     request_json = await request.json()
     response = {}
+    before = player_snapshot(player_data)
 
     advanced_gacha_manager = get_advanced_gacha_manager(
         player_data, request_json, response
     )
     advanced_gacha_manager.gacha_advancedGacha()
+
+    event(
+        request,
+        "tutorial_advanced_gacha",
+        poolId=request_json.get("poolId"),
+        charId=response.get("charGet", {}).get("charId"),
+        charInstId=response.get("charGet", {}).get("charInstId"),
+        isNew=response.get("charGet", {}).get("isNew"),
+        itemGet=response.get("charGet", {}).get("itemGet", []),
+        before=before,
+        after=player_snapshot(player_data),
+        tutorialPurpose="unknown",
+        currencyConsumption="not_implemented",
+    )
 
     return response
 

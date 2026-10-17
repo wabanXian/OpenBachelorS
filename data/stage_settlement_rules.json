@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "stages": {
+    "main_00-01": {
+      "firstPass": [
+        {
+          "type": "TKT_RECRUIT",
+          "id": "7001",
+          "count": 1,
+          "target": "status.recruitLicense",
+          "evidence": "stage_table ONCE+ALWAYS; PRTS/history confirms quantity 1"
+        }
+      ],
+      "approximateDrops": [
+        {
+          "type": "CARD_EXP",
+          "id": "2001",
+          "target": "inventory.2001",
+          "matrix": {
+            "server": "CN",
+            "quantity": 586656,
+            "times": 137994,
+            "source": "Penguin Statistics matrix API filtered by main_00-01/2001",
+            "sourceUrl": "https://penguin-stats.io/PenguinStats/api/v2/result/matrix?server=CN&stageFilter=main_00-01&itemFilter=2001",
+            "snapshotProvenance": "user-provided API response on 2026-10-16; live refetch was unavailable",
+            "localRawComparison": {
+              "quantity": 585965,
+              "times": 137834,
+              "source": "drop_data/stage_drop_dataset_cn.json"
+            },
+            "license": "CC BY-NC 4.0"
+          },
+          "bounds": {
+            "normal": [2, 4],
+            "additional": [1, 2]
+          },
+          "algorithm": "stochastic_round_total_mean_with_additional_lower_bound",
+          "warning": "Single-player approximation; not an official per-run probability distribution"
+        }
+      ]
+    },
+    "main_00-02": {
+      "firstPass": [
+        {
+          "type": "CARD_EXP",
+          "id": "2001",
+          "count": 1,
+          "target": "inventory.2001",
+          "evidence": "stage_table ONCE+ALWAYS; PRTS ordinary-stage first fixed drop lists one Basic Battle Record"
+        }
+      ],
+      "approximateDrops": []
+    }
+  }
+}

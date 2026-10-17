@@ -12,6 +12,7 @@ from openbachelors.util.player_data import (
     player_data_template,
     player_data_decorator,
     PlayerData,
+    repair_missing_char_equip_fields,
 )
 
 
@@ -170,6 +171,68 @@ def test_nested_overlay_json():
     assert is_empty_dict(delta_json.modified_dict)
     assert is_empty_dict(delta_json.deleted_dict)
 
+
+def test_copy_ignores_read_artifact_for_dynamic_nested_key():
+    base_json = ConstJson({"troop": {"chars": {}}})
+    delta_json = DeltaJson(
+        modified_dict={
+            "troop": {
+                "chars": {
+                    "504": {"instId": 504, "charId": "char_130_doberm"}
+                }
+            }
+        },
+        deleted_dict={},
+    )
+    overlay_json = OverlayJson(base_json, delta_json)
+
+    # Iteration/len follows the same path as the tutorial sync diagnostics and
+    # creates a harmless empty deleted branch for the overlay-only instance.
+    assert len(overlay_json["troop"]["chars"]) == 1
+    assert delta_json.deleted_dict == {"troop": {"chars": {"504": {}}}}
+
+    assert overlay_json.copy() == {
+        "troop": {
+            "chars": {
+                "504": {"instId": 504, "charId": "char_130_doberm"}
+            }
+        }
+    }
+
+
+def test_new_empty_mapping_survives_delta_pruning():
+    overlay = OverlayJson(ConstJson({}), DeltaJson())
+
+    overlay["equip"] = {}
+    overlay.delta_json.prune_empty_branches()
+
+    assert overlay.copy() == {"equip": {}}
+    assert overlay.delta_json.modified_dict == {"equip": {}}
+    assert overlay.delta_json.deleted_dict == {}
+
+
+def test_legacy_dynamic_character_gets_required_empty_equip_mapping():
+    base_json = ConstJson({"troop": {"chars": {}}})
+    delta_json = DeltaJson(
+        modified_dict={
+            "troop": {
+                "chars": {
+                    "504": {
+                        "instId": 504,
+                        "charId": "char_130_doberm",
+                        "currentEquip": None,
+                    }
+                }
+            }
+        }
+    )
+    player = OverlayJson(base_json, delta_json)
+
+    repaired = repair_missing_char_equip_fields(player)
+
+    assert repaired == [{"charInstId": 504, "fields": ["equip"]}]
+    assert player["troop"]["chars"]["504"]["equip"].copy() == {}
+    assert repair_missing_char_equip_fields(player) == []
 
 def test_player_data_template():
     os.makedirs(TMP_DIRPATH, exist_ok=True)

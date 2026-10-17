@@ -1,15 +1,24 @@
 {
     "host": "127.0.0.1",
     "port": 8443,
-    "player_preset": "sandbox",
+    "player_preset": "post_tutorial",
     "use_db": false,
     "db_url": "postgresql://postgres:123456@127.0.0.1:5432",
     "adaptive": true,
     "multi_user": true,
     "redirect_asset": false,
     "debug": true,
+    "http_trace": {
+        "enabled": true,
+        "paths": ["/quest/", "/account/"],
+        "max_body_bytes": 65536,
+        "max_log_chars": 12000
+    },
+    "tutorial_debug": {
+        "enabled": true
+    },
     "battle_protocol_audit": {
-        "enabled": false,
+        "enabled": true,
         "path": "battle_audit/battle_protocol.jsonl"
     },
     "mod": false,

@@ -1,0 +1,2014 @@
+{
+  "schemaVersion": 1,
+  "selection": {
+    "stageIdPrefixes": [
+      "main_",
+      "sub_"
+    ],
+    "zonePrefix": "main_",
+    "stageTypes": [
+      "MAIN",
+      "SUB"
+    ],
+    "difficulty": "NORMAL",
+    "performanceStageFlag": "NORMAL_STAGE",
+    "excludeStoryOnly": true,
+    "excludePredefined": true,
+    "excludeVariantIdsContainingHash": true
+  },
+  "license": {
+    "penguin_statistics": "CC BY-NC 4.0",
+    "attribution": "Drop-rate statistics © Penguin Statistics, CC BY-NC 4.0.",
+    "redistribution_review_required": true
+  },
+  "ordinaryStageCount": 255,
+  "settlementEnabledCount": 239,
+  "completeRuleCount": 238,
+  "approximateDropStageCount": 254,
+  "deterministicOnlyStageCount": 1,
+  "stagesWithUnconfirmedFirstPassRewards": {
+    "main_00-05": [
+      {
+        "type": "MATERIAL",
+        "id": "3301",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      },
+      {
+        "type": "CHAR",
+        "id": "char_192_falco",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_00-08": [
+      {
+        "type": "CHAR",
+        "id": "char_121_lava",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_00-09": [
+      {
+        "type": "MATERIAL",
+        "id": "3003",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_00-10": [
+      {
+        "type": "CHAR",
+        "id": "char_212_ansel",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      },
+      {
+        "type": "MATERIAL",
+        "id": "3112",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_00-11": [
+      {
+        "type": "CHAR",
+        "id": "char_208_melan",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      },
+      {
+        "type": "MATERIAL",
+        "id": "3131",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_01-01": [
+      {
+        "type": "MATERIAL",
+        "id": "3105",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      },
+      {
+        "type": "MATERIAL",
+        "id": "3131",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_01-07": [
+      {
+        "type": "CHAR",
+        "id": "char_278_orchid",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_01-08": [
+      {
+        "type": "MATERIAL",
+        "id": "3105",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_01-12": [
+      {
+        "type": "CHAR",
+        "id": "char_277_sqrrel",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_02-10": [
+      {
+        "type": "CHAR",
+        "id": "char_002_amiya",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_03-04": [
+      {
+        "type": "MATERIAL",
+        "id": "3105",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_03-08": [
+      {
+        "type": "CHAR",
+        "id": "char_002_amiya",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_04-07": [
+      {
+        "type": "MATERIAL",
+        "id": "3105",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_04-09": [
+      {
+        "type": "CHAR",
+        "id": "char_002_amiya",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_07-01": [
+      {
+        "type": "CHAR",
+        "id": "char_376_therex",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ],
+    "main_07-16": [
+      {
+        "type": "CHAR",
+        "id": "char_002_amiya",
+        "count": null,
+        "evidence": "stage_table.displayDetailRewards ONCE"
+      }
+    ]
+  },
+  "stagesWithoutExactMatrix": [
+    "main_12-14"
+  ],
+  "lowSampleOrUnusableDrops": {
+    "main_00-01": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_00-02": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_00-05": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_00-07": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_00-08": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_00-09": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_00-11": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_01-01": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_01-03": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_01-04": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_01-05": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_01-06": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_01-07": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_01-08": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_01-09": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_01-10": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_01-12": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_02-01": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_02-01": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_02-02": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_02-02": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "sub_02-04": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_02-03": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_02-04": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_02-05": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_02-06": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_02-07": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_02-05": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_02-06": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_02-07": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "sub_02-08": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_02-09": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_02-08": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_02-09": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_02-11": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "sub_02-12": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_02-10": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_03-01": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_03-02": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_03-03": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_03-04": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_03-05": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_03-06": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_03-07": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_03-08": [
+      {
+        "itemId": "30034",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_03-1-1": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_03-1-2": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_03-2-1": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_03-2-2": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_03-2-3": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "sub_03-3-1": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_03-3-2": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_04-01": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_04-02": [
+      {
+        "itemId": "30024",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_04-03": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_04-04": [
+      {
+        "itemId": "30074",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_04-05": [
+      {
+        "itemId": "30054",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_04-06": [
+      {
+        "itemId": "30014",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_04-07": [
+      {
+        "itemId": "30084",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_04-08": [
+      {
+        "itemId": "30094",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_04-09": [
+      {
+        "itemId": "30104",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_04-10": [
+      {
+        "itemId": "30064",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_05-01": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_05-02": [
+      {
+        "itemId": "30024",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_05-03": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_05-04": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_05-05": [
+      {
+        "itemId": "30044",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_05-06": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_05-07": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_05-08": [
+      {
+        "itemId": "30054",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_05-09": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_05-10": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_06-01": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_06-02": [
+      {
+        "itemId": "30084",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_06-03": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_06-04": [
+      {
+        "itemId": "30034",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_06-05": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_06-07": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_06-08": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_06-09": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_06-10": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_06-11": [
+      {
+        "itemId": "31024",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_06-12": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_06-13": [
+      {
+        "itemId": "30104",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_06-14": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_07-01": [
+      {
+        "itemId": "30014",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_07-02": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_07-03": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_07-04": [
+      {
+        "itemId": "30074",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_07-05": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_07-06": [
+      {
+        "itemId": "31014",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_07-07": [
+      {
+        "itemId": "30064",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_07-08": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_07-09": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_07-10": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_07-12": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_07-13": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_07-14": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_07-15": [
+      {
+        "itemId": "30094",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_07-16": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_08-01": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_08-02": [
+      {
+        "itemId": "30074",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_08-03": [
+      {
+        "itemId": "30014",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_08-04": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_08-05": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_08-07": [
+      {
+        "itemId": "31024",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_08-08": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_08-10": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_08-11": [
+      {
+        "itemId": "30084",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_08-12": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_08-13": [
+      {
+        "itemId": "31034",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_08-14": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_08-16": [
+      {
+        "itemId": "31014",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_08-17": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_04-1-1": [
+      {
+        "itemId": "30044",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_04-1-2": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "sub_04-2-3": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_04-3-1": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "sub_04-4-1": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_05-1-1": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_05-1-2": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_05-2-1": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "sub_05-2-2": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "sub_05-3-1": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "sub_05-4-1": [
+      {
+        "itemId": "31014",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_05-4-2": [
+      {
+        "itemId": "31024",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_05-4-3": [
+      {
+        "itemId": "31034",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_06-1-2": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_06-2-1": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "sub_07-1-1": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "sub_07-1-2": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-01": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-02": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-03": [
+      {
+        "itemId": "31044",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-04": [
+      {
+        "itemId": "30024",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-05": [
+      {
+        "itemId": "31054",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-06": [
+      {
+        "itemId": "30034",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-07": [
+      {
+        "itemId": "30074",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-08": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-09": [
+      {
+        "itemId": "31113",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_09-10": [
+      {
+        "itemId": "31024",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-11": [
+      {
+        "itemId": "30014",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-12": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-13": [
+      {
+        "itemId": "30084",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-14": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-15": [
+      {
+        "itemId": "30044",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-16": [
+      {
+        "itemId": "31044",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_09-17": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-01": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-02": [
+      {
+        "itemId": "31014",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-03": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-04": [
+      {
+        "itemId": "30104",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-05": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-06": [
+      {
+        "itemId": "30084",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-07": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-08": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-09": [
+      {
+        "itemId": "30024",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-10": [
+      {
+        "itemId": "30044",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-11": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-12": [
+      {
+        "itemId": "31024",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-13": [
+      {
+        "itemId": "30074",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-14": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_10-15": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_11-01": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_11-02": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_11-03": [
+      {
+        "itemId": "31064",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_11-04": [
+      {
+        "itemId": "30104",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_11-05": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_11-06": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_11-07": [
+      {
+        "itemId": "31044",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "main_11-08": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_11-09": [
+      {
+        "itemId": "30044",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_11-10": [
+      {
+        "itemId": "31014",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_11-11": [
+      {
+        "itemId": "30074",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_11-12": [
+      {
+        "itemId": "31024",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_11-13": [
+      {
+        "itemId": "31064",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_11-14": [
+      {
+        "itemId": "31054",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_11-16": [
+      {
+        "itemId": "30014",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_11-18": [
+      {
+        "itemId": "30064",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-01": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-02": [
+      {
+        "itemId": "31034",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-03": [
+      {
+        "itemId": "30054",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-04": [
+      {
+        "itemId": "31014",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-05": [
+      {
+        "itemId": "30074",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "31113",
+        "reason": "missing_or_low_sample_matrix"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-06": [
+      {
+        "itemId": "30104",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-07": [
+      {
+        "itemId": "30094",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-08": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-09": [
+      {
+        "itemId": "31044",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-10": [
+      {
+        "itemId": "31024",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-11": [
+      {
+        "itemId": "31064",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-12": [
+      {
+        "itemId": "30024",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-13": [
+      {
+        "itemId": "30014",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-15": [
+      {
+        "itemId": "31054",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-16": [
+      {
+        "itemId": "30034",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-17": [
+      {
+        "itemId": "31034",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_12-18": [
+      {
+        "itemId": "30054",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-02": [
+      {
+        "itemId": "30014",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-03": [
+      {
+        "itemId": "30054",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-04": [
+      {
+        "itemId": "31074",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-05": [
+      {
+        "itemId": "31024",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-06": [
+      {
+        "itemId": "31034",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-08": [
+      {
+        "itemId": "30064",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-09": [
+      {
+        "itemId": "30084",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-10": [
+      {
+        "itemId": "30034",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-11": [
+      {
+        "itemId": "31064",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-12": [
+      {
+        "itemId": "31044",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-13": [
+      {
+        "itemId": "31084",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-14": [
+      {
+        "itemId": "30044",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-15": [
+      {
+        "itemId": "30024",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-16": [
+      {
+        "itemId": "31024",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-17": [
+      {
+        "itemId": "30074",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-18": [
+      {
+        "itemId": "30084",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_13-19": [
+      {
+        "itemId": "30094",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_14-01": [
+      {
+        "itemId": "30021",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "30031",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "30041",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "30051",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_14-02": [
+      {
+        "itemId": "30011",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "30031",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "30051",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "30061",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "31034",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_14-03": [
+      {
+        "itemId": "30022",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_14-04": [
+      {
+        "itemId": "30032",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "30094",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_14-05": [
+      {
+        "itemId": "30053",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "30074",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_14-08": [
+      {
+        "itemId": "30034",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "30053",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_14-10": [
+      {
+        "itemId": "31053",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_14-11": [
+      {
+        "itemId": "30063",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_14-12": [
+      {
+        "itemId": "30053",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "30084",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_14-14": [
+      {
+        "itemId": "30054",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "30063",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_14-15": [
+      {
+        "itemId": "30024",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "30053",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_14-17": [
+      {
+        "itemId": "31084",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_14-18": [
+      {
+        "itemId": "30053",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "main_14-19": [
+      {
+        "itemId": "31054",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "31103",
+        "reason": "missing_or_low_sample_matrix"
+      }
+    ],
+    "sub_09-1-1": [
+      {
+        "itemId": "30054",
+        "reason": "unclassified_or_special_matrix_drop"
+      },
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ],
+    "sub_09-1-2": [
+      {
+        "itemId": "ap_supply_lt_010",
+        "reason": "unclassified_or_special_matrix_drop"
+      }
+    ]
+  },
+  "chapterCoverage": {
+    "main_0": {
+      "ordinary": 11,
+      "enabled": 6,
+      "complete": 6,
+      "approximate": 11
+    },
+    "main_1": {
+      "ordinary": 10,
+      "enabled": 6,
+      "complete": 6,
+      "approximate": 10
+    },
+    "main_2": {
+      "ordinary": 22,
+      "enabled": 21,
+      "complete": 21,
+      "approximate": 22
+    },
+    "main_3": {
+      "ordinary": 15,
+      "enabled": 13,
+      "complete": 13,
+      "approximate": 15
+    },
+    "main_4": {
+      "ordinary": 20,
+      "enabled": 18,
+      "complete": 18,
+      "approximate": 20
+    },
+    "main_5": {
+      "ordinary": 19,
+      "enabled": 19,
+      "complete": 19,
+      "approximate": 19
+    },
+    "main_6": {
+      "ordinary": 17,
+      "enabled": 17,
+      "complete": 17,
+      "approximate": 17
+    },
+    "main_7": {
+      "ordinary": 18,
+      "enabled": 16,
+      "complete": 16,
+      "approximate": 18
+    },
+    "main_8": {
+      "ordinary": 16,
+      "enabled": 16,
+      "complete": 16,
+      "approximate": 16
+    },
+    "main_9": {
+      "ordinary": 21,
+      "enabled": 21,
+      "complete": 21,
+      "approximate": 21
+    },
+    "main_10": {
+      "ordinary": 15,
+      "enabled": 15,
+      "complete": 15,
+      "approximate": 15
+    },
+    "main_11": {
+      "ordinary": 16,
+      "enabled": 16,
+      "complete": 16,
+      "approximate": 16
+    },
+    "main_12": {
+      "ordinary": 18,
+      "enabled": 18,
+      "complete": 17,
+      "approximate": 17
+    },
+    "main_13": {
+      "ordinary": 19,
+      "enabled": 19,
+      "complete": 19,
+      "approximate": 19
+    },
+    "main_14": {
+      "ordinary": 18,
+      "enabled": 18,
+      "complete": 18,
+      "approximate": 18
+    }
+  }
+}

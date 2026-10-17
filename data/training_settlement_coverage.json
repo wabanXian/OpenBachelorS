@@ -1,0 +1,1240 @@
+{
+  "schemaVersion": 1,
+  "selection": {
+    "stageIdPattern": "^tr_[0-9]+$",
+    "zonePrefix": "main_",
+    "requirePredefined": true
+  },
+  "mainlineTrainingCount": 25,
+  "supportedCount": 25,
+  "ids": [
+    "tr_01",
+    "tr_02",
+    "tr_03",
+    "tr_04",
+    "tr_05",
+    "tr_06",
+    "tr_07",
+    "tr_08",
+    "tr_09",
+    "tr_10",
+    "tr_11",
+    "tr_12",
+    "tr_13",
+    "tr_14",
+    "tr_15",
+    "tr_16",
+    "tr_17",
+    "tr_18",
+    "tr_19",
+    "tr_20",
+    "tr_21",
+    "tr_22",
+    "tr_23",
+    "tr_24",
+    "tr_25"
+  ],
+  "unsupported": {},
+  "specialMainTrainingExcluded": [
+    "tr_s_1",
+    "tr_s_2"
+  ],
+  "activityNumberedTrainingExcluded": [
+    "tr_26",
+    "tr_27",
+    "tr_28"
+  ],
+  "otherTrainingExcluded": [
+    "act11d0_tr01",
+    "lt_tr_01",
+    "lt_tr_02",
+    "lt_tr_03"
+  ],
+  "taskMap": {
+    "tr_01": [
+      {
+        "id": "main_2",
+        "type": "MAIN",
+        "template": "CompleteMainStage",
+        "missionGroup": "main_2",
+        "preMissionIds": [],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "GOLD",
+            "id": "4001",
+            "count": 1000
+          }
+        ]
+      }
+    ],
+    "tr_02": [
+      {
+        "id": "sub_1",
+        "type": "SUB",
+        "template": "CompleteStage",
+        "missionGroup": "sub_g_1",
+        "preMissionIds": [],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "CARD_EXP",
+            "id": "2001",
+            "count": 5
+          }
+        ]
+      }
+    ],
+    "tr_03": [
+      {
+        "id": "sub_2",
+        "type": "SUB",
+        "template": "CompleteStage",
+        "missionGroup": "sub_g_1",
+        "preMissionIds": [
+          "sub_1"
+        ],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "CARD_EXP",
+            "id": "2001",
+            "count": 5
+          }
+        ]
+      }
+    ],
+    "tr_04": [
+      {
+        "id": "sub_3",
+        "type": "SUB",
+        "template": "CompleteStage",
+        "missionGroup": "sub_g_1",
+        "preMissionIds": [
+          "sub_2"
+        ],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "CARD_EXP",
+            "id": "2001",
+            "count": 5
+          }
+        ]
+      }
+    ],
+    "tr_05": [
+      {
+        "id": "sub_4",
+        "type": "SUB",
+        "template": "CompleteStage",
+        "missionGroup": "sub_g_1",
+        "preMissionIds": [
+          "sub_3"
+        ],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "CARD_EXP",
+            "id": "2001",
+            "count": 5
+          }
+        ]
+      }
+    ],
+    "tr_06": [
+      {
+        "id": "sub_5",
+        "type": "SUB",
+        "template": "CompleteStage",
+        "missionGroup": "sub_g_1",
+        "preMissionIds": [
+          "sub_4"
+        ],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "CARD_EXP",
+            "id": "2001",
+            "count": 5
+          }
+        ]
+      }
+    ],
+    "tr_07": [
+      {
+        "id": "sub_6",
+        "type": "SUB",
+        "template": "CompleteStage",
+        "missionGroup": "sub_g_1",
+        "preMissionIds": [
+          "sub_5"
+        ],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "CARD_EXP",
+            "id": "2001",
+            "count": 5
+          }
+        ]
+      }
+    ],
+    "tr_08": [
+      {
+        "id": "sub_38",
+        "type": "SUB",
+        "template": "CompleteStage",
+        "missionGroup": "sub_g_10",
+        "preMissionIds": [],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "MATERIAL",
+            "id": "30011",
+            "count": 3
+          }
+        ]
+      }
+    ],
+    "tr_09": [
+      {
+        "id": "sub_39",
+        "type": "SUB",
+        "template": "CompleteStage",
+        "missionGroup": "sub_g_10",
+        "preMissionIds": [
+          "sub_38"
+        ],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "MATERIAL",
+            "id": "30021",
+            "count": 3
+          }
+        ]
+      }
+    ],
+    "tr_10": [
+      {
+        "id": "sub_40",
+        "type": "SUB",
+        "template": "CompleteStage",
+        "missionGroup": "sub_g_10",
+        "preMissionIds": [
+          "sub_39"
+        ],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "MATERIAL",
+            "id": "30031",
+            "count": 3
+          }
+        ]
+      }
+    ],
+    "tr_11": [
+      {
+        "id": "sub_46",
+        "type": "SUB",
+        "template": "CompleteStage",
+        "missionGroup": "sub_g_12",
+        "preMissionIds": [],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "MATERIAL",
+            "id": "30041",
+            "count": 3
+          }
+        ]
+      }
+    ],
+    "tr_12": [
+      {
+        "id": "sub_47",
+        "type": "SUB",
+        "template": "CompleteStage",
+        "missionGroup": "sub_g_12",
+        "preMissionIds": [
+          "sub_46"
+        ],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "MATERIAL",
+            "id": "30051",
+            "count": 3
+          }
+        ]
+      }
+    ],
+    "tr_13": [
+      {
+        "id": "sub_48",
+        "type": "SUB",
+        "template": "CompleteStage",
+        "missionGroup": "sub_g_12",
+        "preMissionIds": [
+          "sub_47"
+        ],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "MATERIAL",
+            "id": "30061",
+            "count": 2
+          }
+        ]
+      }
+    ],
+    "tr_14": [
+      {
+        "id": "sub_49",
+        "type": "SUB",
+        "template": "CompleteStage",
+        "missionGroup": "sub_g_12",
+        "preMissionIds": [
+          "sub_48"
+        ],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "MATERIAL",
+            "id": "30062",
+            "count": 2
+          }
+        ]
+      }
+    ],
+    "tr_15": [
+      {
+        "id": "sub_68",
+        "type": "SUB",
+        "template": "CompleteStage",
+        "missionGroup": "sub_g_19",
+        "preMissionIds": [],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "MATERIAL",
+            "id": "30022",
+            "count": 2
+          }
+        ]
+      }
+    ],
+    "tr_16": [],
+    "tr_17": [],
+    "tr_18": [],
+    "tr_19": [],
+    "tr_20": [],
+    "tr_21": [],
+    "tr_22": [],
+    "tr_23": [],
+    "tr_24": [],
+    "tr_25": []
+  },
+  "firstPassRewardMap": {
+    "tr_01": [
+      {
+        "type": "CHAR",
+        "id": "char_120_hibisc",
+        "count": 1,
+        "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+      }
+    ],
+    "tr_02": [
+      {
+        "type": "CHAR",
+        "id": "char_211_adnach",
+        "count": 1,
+        "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+      }
+    ],
+    "tr_03": [
+      {
+        "type": "CHAR",
+        "id": "char_235_jesica",
+        "count": 1,
+        "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+      }
+    ],
+    "tr_04": [
+      {
+        "type": "CHAR",
+        "id": "char_123_fang",
+        "count": 1,
+        "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+      }
+    ],
+    "tr_05": [
+      {
+        "type": "CHAR",
+        "id": "char_501_durin",
+        "count": 1,
+        "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+      }
+    ],
+    "tr_06": [
+      {
+        "type": "CHAR",
+        "id": "char_009_12fce",
+        "count": 1,
+        "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+      }
+    ],
+    "tr_07": [
+      {
+        "type": "CHAR",
+        "id": "char_122_beagle",
+        "count": 1,
+        "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+      }
+    ],
+    "tr_08": [
+      {
+        "type": "CHAR",
+        "id": "char_124_kroos",
+        "count": 1,
+        "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+      }
+    ],
+    "tr_09": [],
+    "tr_10": [
+      {
+        "type": "CHAR",
+        "id": "char_285_medic2",
+        "count": 1,
+        "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+      }
+    ],
+    "tr_11": [],
+    "tr_12": [],
+    "tr_13": [],
+    "tr_14": [],
+    "tr_15": [],
+    "tr_16": [],
+    "tr_17": [],
+    "tr_18": [],
+    "tr_19": [],
+    "tr_20": [],
+    "tr_21": [],
+    "tr_22": [],
+    "tr_23": [],
+    "tr_24": [],
+    "tr_25": []
+  },
+  "stageCoverage": {
+    "tr_01": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [
+        {
+          "type": "CHAR",
+          "id": "char_120_hibisc",
+          "count": 1,
+          "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+        }
+      ],
+      "missions": [
+        {
+          "id": "main_2",
+          "type": "MAIN",
+          "template": "CompleteMainStage",
+          "missionGroup": "main_2",
+          "preMissionIds": [],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "GOLD",
+              "id": "4001",
+              "count": 1000
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_00-01",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_00-02"
+      ]
+    },
+    "tr_02": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [
+        {
+          "type": "CHAR",
+          "id": "char_211_adnach",
+          "count": 1,
+          "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+        }
+      ],
+      "missions": [
+        {
+          "id": "sub_1",
+          "type": "SUB",
+          "template": "CompleteStage",
+          "missionGroup": "sub_g_1",
+          "preMissionIds": [],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "CARD_EXP",
+              "id": "2001",
+              "count": 5
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_00-02",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_00-03"
+      ]
+    },
+    "tr_03": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [
+        {
+          "type": "CHAR",
+          "id": "char_235_jesica",
+          "count": 1,
+          "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+        }
+      ],
+      "missions": [
+        {
+          "id": "sub_2",
+          "type": "SUB",
+          "template": "CompleteStage",
+          "missionGroup": "sub_g_1",
+          "preMissionIds": [
+            "sub_1"
+          ],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "CARD_EXP",
+              "id": "2001",
+              "count": 5
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_00-03",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_00-04"
+      ]
+    },
+    "tr_04": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [
+        {
+          "type": "CHAR",
+          "id": "char_123_fang",
+          "count": 1,
+          "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+        }
+      ],
+      "missions": [
+        {
+          "id": "sub_3",
+          "type": "SUB",
+          "template": "CompleteStage",
+          "missionGroup": "sub_g_1",
+          "preMissionIds": [
+            "sub_2"
+          ],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "CARD_EXP",
+              "id": "2001",
+              "count": 5
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_00-04",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_00-05"
+      ]
+    },
+    "tr_05": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [
+        {
+          "type": "CHAR",
+          "id": "char_501_durin",
+          "count": 1,
+          "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+        }
+      ],
+      "missions": [
+        {
+          "id": "sub_4",
+          "type": "SUB",
+          "template": "CompleteStage",
+          "missionGroup": "sub_g_1",
+          "preMissionIds": [
+            "sub_3"
+          ],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "CARD_EXP",
+              "id": "2001",
+              "count": 5
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_00-06",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_00-07"
+      ]
+    },
+    "tr_06": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [
+        {
+          "type": "CHAR",
+          "id": "char_009_12fce",
+          "count": 1,
+          "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+        }
+      ],
+      "missions": [
+        {
+          "id": "sub_5",
+          "type": "SUB",
+          "template": "CompleteStage",
+          "missionGroup": "sub_g_1",
+          "preMissionIds": [
+            "sub_4"
+          ],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "CARD_EXP",
+              "id": "2001",
+              "count": 5
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_00-07",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_00-08"
+      ]
+    },
+    "tr_07": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [
+        {
+          "type": "CHAR",
+          "id": "char_122_beagle",
+          "count": 1,
+          "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+        }
+      ],
+      "missions": [
+        {
+          "id": "sub_6",
+          "type": "SUB",
+          "template": "CompleteStage",
+          "missionGroup": "sub_g_1",
+          "preMissionIds": [
+            "sub_5"
+          ],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "CARD_EXP",
+              "id": "2001",
+              "count": 5
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_00-09",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_00-10",
+        "tr_s_1"
+      ]
+    },
+    "tr_08": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [
+        {
+          "type": "CHAR",
+          "id": "char_124_kroos",
+          "count": 1,
+          "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+        }
+      ],
+      "missions": [
+        {
+          "id": "sub_38",
+          "type": "SUB",
+          "template": "CompleteStage",
+          "missionGroup": "sub_g_10",
+          "preMissionIds": [],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "MATERIAL",
+              "id": "30011",
+              "count": 3
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_01-05",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_01-06"
+      ]
+    },
+    "tr_09": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [
+        {
+          "id": "sub_39",
+          "type": "SUB",
+          "template": "CompleteStage",
+          "missionGroup": "sub_g_10",
+          "preMissionIds": [
+            "sub_38"
+          ],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "MATERIAL",
+              "id": "30021",
+              "count": 3
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_01-06",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_01-07"
+      ]
+    },
+    "tr_10": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [
+        {
+          "type": "CHAR",
+          "id": "char_285_medic2",
+          "count": 1,
+          "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+        }
+      ],
+      "missions": [
+        {
+          "id": "sub_40",
+          "type": "SUB",
+          "template": "CompleteStage",
+          "missionGroup": "sub_g_10",
+          "preMissionIds": [
+            "sub_39"
+          ],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "MATERIAL",
+              "id": "30031",
+              "count": 3
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_01-08",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_01-09"
+      ]
+    },
+    "tr_11": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [
+        {
+          "id": "sub_46",
+          "type": "SUB",
+          "template": "CompleteStage",
+          "missionGroup": "sub_g_12",
+          "preMissionIds": [],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "MATERIAL",
+              "id": "30041",
+              "count": 3
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [],
+      "unlockCandidates": [
+        "main_02-01"
+      ]
+    },
+    "tr_12": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [
+        {
+          "id": "sub_47",
+          "type": "SUB",
+          "template": "CompleteStage",
+          "missionGroup": "sub_g_12",
+          "preMissionIds": [
+            "sub_46"
+          ],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "MATERIAL",
+              "id": "30051",
+              "count": 3
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_02-03",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_02-04"
+      ]
+    },
+    "tr_13": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [
+        {
+          "id": "sub_48",
+          "type": "SUB",
+          "template": "CompleteStage",
+          "missionGroup": "sub_g_12",
+          "preMissionIds": [
+            "sub_47"
+          ],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "MATERIAL",
+              "id": "30061",
+              "count": 2
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "sub_02-07",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_02-05"
+      ]
+    },
+    "tr_14": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [
+        {
+          "id": "sub_49",
+          "type": "SUB",
+          "template": "CompleteStage",
+          "missionGroup": "sub_g_12",
+          "preMissionIds": [
+            "sub_48"
+          ],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "MATERIAL",
+              "id": "30062",
+              "count": 2
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_02-06",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_02-07"
+      ]
+    },
+    "tr_15": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [
+        {
+          "id": "sub_68",
+          "type": "SUB",
+          "template": "CompleteStage",
+          "missionGroup": "sub_g_19",
+          "preMissionIds": [],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "MATERIAL",
+              "id": "30022",
+              "count": 2
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_03-03",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_03-04",
+        "sub_03-1-1"
+      ]
+    },
+    "tr_16": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "main_06-07",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_06-08"
+      ]
+    },
+    "tr_17": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "main_07-04",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_07-05"
+      ]
+    },
+    "tr_18": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "st_08-01",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_08-02"
+      ]
+    },
+    "tr_19": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "easy_09-05",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "easy_09-06",
+        "main_09-06"
+      ]
+    },
+    "tr_20": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "easy_10-02",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "easy_10-03",
+        "main_10-03",
+        "tough_10-03"
+      ]
+    },
+    "tr_21": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "easy_11-05",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "easy_11-06",
+        "main_11-06",
+        "tough_11-06"
+      ]
+    },
+    "tr_22": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "st_12-01",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "easy_12-01",
+        "main_12-01",
+        "tough_12-01"
+      ]
+    },
+    "tr_23": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "easy_12-06",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "easy_12-07",
+        "main_12-07",
+        "tough_12-07"
+      ]
+    },
+    "tr_24": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "easy_13-05",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "easy_13-06",
+        "main_13-06",
+        "tough_13-06"
+      ]
+    },
+    "tr_25": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "easy_14-01",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "easy_14-02",
+        "main_14-02",
+        "tough_14-02"
+      ]
+    }
+  }
+}

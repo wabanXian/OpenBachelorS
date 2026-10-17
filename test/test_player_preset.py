@@ -54,7 +54,17 @@ def test_post_tutorial_has_no_precompleted_progress_or_rewards():
     preset = post_tutorial_player_data_template.copy()
     ledger, unresolved = build_post_tutorial_reward_ledger()
 
-    assert preset["dungeon"]["stages"] == {}
+    assert preset["dungeon"]["stages"].copy() == {
+        "main_00-01": {
+            "stageId": "main_00-01",
+            "completeTimes": 0,
+            "startTimes": 0,
+            "practiceTimes": 0,
+            "state": 0,
+            "hasBattleReplay": 0,
+            "noCostCnt": 0,
+        }
+    }
     assert all(not missions for missions in preset["mission"]["missions"].values())
     assert preset["mission"]["missionGroups"] == {}
     assert preset["status"]["flags"] == {"init": 1}
@@ -133,7 +143,7 @@ async def test_save_reload_keeps_fresh_account_progress():
         reloaded = OverlayJson(post_tutorial_player_data_template, reloaded_delta)
         assert reloaded["status"]["gold"] == initial_gold - 1234
         assert reloaded["status"]["progress"] == 100
-        assert reloaded["dungeon"]["stages"].copy() == {}
+        assert reloaded["dungeon"]["stages"]["main_00-01"]["state"] == 0
     finally:
         if delta_path.exists():
             delta_path.unlink()
@@ -166,7 +176,18 @@ async def test_sync_data_response_contains_fresh_account(monkeypatch):
         assert payload["playerDataDelta"] == {"modified": {}, "deleted": {}}
         assert user["status"]["level"] == 1
         assert user["status"]["mainStageProgress"] is None
-        assert user["dungeon"]["stages"] == {}
+        assert user["status"]["lastApAddTime"] == payload["ts"]
+        assert user["dungeon"]["stages"] == {
+            "main_00-01": {
+                "stageId": "main_00-01",
+                "completeTimes": 0,
+                "startTimes": 0,
+                "practiceTimes": 0,
+                "state": 0,
+                "hasBattleReplay": 0,
+                "noCostCnt": 0,
+            }
+        }
         assert user["mission"]["missionGroups"] == {}
         assert all(not missions for missions in user["mission"]["missions"].values())
     finally:
