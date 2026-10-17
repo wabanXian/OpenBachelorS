@@ -50,6 +50,180 @@
         }
       ],
       "approximateDrops": []
+    },
+    "main_00-05": {
+      "firstPass": [
+        {
+          "type": "MATERIAL",
+          "id": "3301",
+          "count": 1,
+          "target": "inventory.3301",
+          "evidence": "stage_table ONCE+ALWAYS; Arknights Bilibili Wiki 0-5 lists Skill Summary 1 x1"
+        },
+        {
+          "type": "CHAR",
+          "id": "char_192_falco",
+          "count": 1,
+          "evidence": "stage_table ONCE+ALWAYS; Arknights Bilibili Wiki 0-5 lists Plume recruitment contract x1"
+        }
+      ],
+      "approximateDrops": []
+    },
+    "main_00-08": {
+      "firstPass": [
+        {
+          "type": "CHAR",
+          "id": "char_121_lava",
+          "count": 1,
+          "evidence": "stage_table ONCE+ALWAYS; Arknights Wiki 0-8 lists Lava as the first-clear operator reward"
+        }
+      ],
+      "approximateDrops": []
+    },
+    "main_00-09": {
+      "firstPass": [
+        {
+          "type": "MATERIAL", "id": "3003", "count": 2,
+          "trigger": "first_pass", "localEvidence": "stage_table ONCE+ALWAYS Pure Gold",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Pure_Gold", "verificationStatus": "cross_checked"
+        }
+      ]
+    },
+    "main_00-10": {
+      "firstPass": [
+        {
+          "type": "CHAR", "id": "char_212_ansel", "count": 1,
+          "trigger": "first_pass", "localEvidence": "stage_table ONCE+ALWAYS Ansel",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Ansel/Overview", "verificationStatus": "cross_checked"
+        },
+        {
+          "type": "MATERIAL", "id": "3112", "count": 6,
+          "trigger": "first_pass", "localEvidence": "stage_table ONCE+ALWAYS Carbon Stick",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Carbon_Stick", "verificationStatus": "cross_checked"
+        }
+      ]
+    },
+    "main_00-11": {
+      "firstPass": [
+        {
+          "type": "CHAR", "id": "char_208_melan", "count": 1,
+          "trigger": "first_pass", "localEvidence": "stage_table ONCE+ALWAYS Melantha",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Melantha/Overview", "verificationStatus": "cross_checked"
+        },
+        {
+          "type": "MATERIAL", "id": "3131", "count": 15,
+          "trigger": "first_pass", "localEvidence": "stage_table ONCE+ALWAYS Light Building Material",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Light_Building_Material", "verificationStatus": "cross_checked"
+        }
+      ]
+    },
+    "main_01-01": {
+      "firstPass": [
+        {
+          "type": "MATERIAL", "id": "3105", "count": 1,
+          "trigger": "first_pass", "localEvidence": "stage_table ONCE+ALWAYS Keel",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Keel", "verificationStatus": "cross_checked"
+        },
+        {
+          "type": "MATERIAL", "id": "3131", "count": 4,
+          "trigger": "first_pass", "localEvidence": "stage_table ONCE+ALWAYS Light Building Material",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Light_Building_Material", "verificationStatus": "cross_checked"
+        }
+      ]
+    },
+    "main_01-07": {
+      "firstPass": [
+        {
+          "type": "CHAR", "id": "char_278_orchid", "count": 1,
+          "trigger": "first_pass", "localEvidence": "stage_table ONCE+ALWAYS Orchid",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Orchid/Overview", "verificationStatus": "cross_checked"
+        }
+      ]
+    },
+    "main_01-08": {
+      "firstPass": [
+        {
+          "type": "MATERIAL", "id": "3105", "count": 1,
+          "trigger": "first_pass", "localEvidence": "stage_table ONCE+ALWAYS Keel",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Keel", "verificationStatus": "cross_checked"
+        }
+      ]
+    },
+    "main_01-12": {
+      "firstPass": [
+        {
+          "type": "CHAR", "id": "char_277_sqrrel", "count": 1,
+          "trigger": "first_pass", "localEvidence": "stage_table ONCE+ALWAYS Shaw",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Shaw", "verificationStatus": "cross_checked"
+        }
+      ]
+    },
+    "main_02-10": {
+      "firstPass": [
+        {
+          "type": "CHAR", "id": "char_002_amiya", "count": 1,
+          "trigger": "first_pass", "duplicatePolicy": "potential_token_only",
+          "localEvidence": "stage_table ONCE+ALWAYS Amiya; character_table potentialItemId=p_char_002_amiya",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Amiya/Overview", "verificationStatus": "cross_checked"
+        }
+      ]
+    },
+    "main_03-04": {
+      "firstPass": [
+        {
+          "type": "MATERIAL", "id": "3105", "count": 1,
+          "trigger": "first_pass", "localEvidence": "stage_table ONCE+ALWAYS Keel",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Keel", "verificationStatus": "cross_checked"
+        }
+      ]
+    },
+    "main_03-08": {
+      "firstPass": [
+        {
+          "type": "CHAR", "id": "char_002_amiya", "count": 1,
+          "trigger": "first_pass", "duplicatePolicy": "potential_token_only",
+          "localEvidence": "stage_table ONCE+ALWAYS Amiya; character_table potentialItemId=p_char_002_amiya",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Amiya/Overview", "verificationStatus": "cross_checked"
+        }
+      ]
+    },
+    "main_04-07": {
+      "firstPass": [
+        {
+          "type": "MATERIAL", "id": "3105", "count": 1,
+          "trigger": "first_pass", "localEvidence": "stage_table ONCE+ALWAYS Keel",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Keel", "verificationStatus": "cross_checked"
+        }
+      ]
+    },
+    "main_04-09": {
+      "firstPass": [
+        {
+          "type": "CHAR", "id": "char_002_amiya", "count": 1,
+          "trigger": "first_pass", "duplicatePolicy": "potential_token_only",
+          "localEvidence": "stage_table ONCE+ALWAYS Amiya; character_table potentialItemId=p_char_002_amiya",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Amiya/Overview", "verificationStatus": "cross_checked"
+        }
+      ]
+    },
+    "main_07-01": {
+      "firstPass": [
+        {
+          "type": "CHAR", "id": "char_376_therex", "count": 1,
+          "trigger": "first_pass", "localEvidence": "stage_table ONCE+ALWAYS THRM-EX",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/THRM-EX/Overview", "verificationStatus": "cross_checked"
+        }
+      ]
+    },
+    "main_07-16": {
+      "firstPass": [
+        {
+          "type": "CHAR", "id": "char_002_amiya", "count": 1,
+          "trigger": "first_pass", "duplicatePolicy": "potential_token_only",
+          "localEvidence": "stage_table ONCE+ALWAYS Amiya; character_table potentialItemId=p_char_002_amiya",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Amiya/Overview", "verificationStatus": "cross_checked"
+        }
+      ]
     }
   }
 }

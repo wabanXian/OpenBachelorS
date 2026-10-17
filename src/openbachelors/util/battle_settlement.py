@@ -13,6 +13,8 @@ from uuid import uuid4
 from ..const.filepath import STAGE_TABLE
 from .const_json_loader import const_json_loader
 from .faketime import faketime
+from .favor import build_squad_favor_snapshot, plan_battle_favor
+from .player_progression import plan_player_exp_gain
 from .reward_grant import plan_reward
 from .settlement_rules import get_stage_rule
 
@@ -39,7 +41,11 @@ def repair_missing_main_one_mission(player_data):
         return False
     missions = player_data["mission"]["missions"]["MAIN"]
     if "main_1" in missions:
-        return False
+        if missions["main_1"]["state"] != 1:
+            return False
+        missions["main_1"] = main_one_mission_record()
+        player_data["mission"]["missionGroups"]["main_1"] = 0
+        return True
     missions["main_1"] = main_one_mission_record()
     player_data["mission"]["missionGroups"]["main_1"] = 0
     return True
@@ -202,6 +208,11 @@ def prepare_battle_start(player_data, request_json):
         return None, "stage_not_unlocked"
     if not all(_condition_met(player_data, item) for item in rule["unlockCondition"]):
         return None, "stage_unlock_condition_not_met"
+    squad_snapshot, snapshot_error = build_squad_favor_snapshot(
+        player_data, request_json
+    )
+    if snapshot_error:
+        return None, snapshot_error
 
     store = _store(player_data.extra_save)
     key = _start_key(request_json)
@@ -242,6 +253,7 @@ def prepare_battle_start(player_data, request_json):
         "apFailReturn": max(0, rule["apFailReturn"]),
         "ruleSource": rule_source,
         "ruleCompleteness": rule["ruleCompleteness"],
+        "squadSnapshot": squad_snapshot,
         "mutations": mutations,
     }
     store["active"] = session
@@ -418,16 +430,30 @@ def prepare_battle_finish(player_data, decoded, raw_data):
             [
                 {"path": ["dungeon", "stages", stage_id, "state"], "value": new_state},
                 {"path": ["dungeon", "stages", stage_id, "completeTimes"], "value": record["completeTimes"] + 1},
-                {"path": ["status", "exp"], "value": player_data["status"]["exp"] + rule["expGain"]},
                 {"path": ["status", "gold"], "value": player_data["status"]["gold"] + rule["goldGain"]},
             ]
         )
+        progression_mutations, player_progression = plan_player_exp_gain(
+            player_data, rule["expGain"]
+        )
+        mutations.extend(progression_mutations)
         rewards["status"].extend(
             [
                 {"field": "exp", "count": rule["expGain"]},
                 {"field": "gold", "count": rule["goldGain"]},
             ]
         )
+        rewards["playerProgression"] = player_progression
+
+        # Since the 2025-12 CN rules change, ordinary successful operations
+        # grant every account-owned squad member trust equal to actual sanity
+        # consumed. This engine does not handle annihilation or multi-run
+        # protocols, so the persisted session's charged AP is the actual cost.
+        favor_mutations, favor_audit = plan_battle_favor(
+            player_data, session.get("squadSnapshot", []), session["apCost"]
+        )
+        mutations.extend(favor_mutations)
+        rewards["favor"] = favor_audit
 
         if old_state < PASS_STATE:
             for reward_rule in rule["firstPassRewards"]:

@@ -2,7 +2,9 @@
 
 from copy import deepcopy
 
+from ..const.filepath import CHARACTER_TABLE
 from .character_grant import build_first_operator_grant
+from .const_json_loader import const_json_loader
 
 
 STATUS_REWARD_FIELDS = {
@@ -59,11 +61,45 @@ def plan_reward(player_data, mutations, reward, platform=2):
     reward_type = reward["type"]
     count = reward.get("count", 1)
     if reward_type == "CHAR":
+        existing = next(
+            (
+                (int(inst_id), char)
+                for inst_id, char in player_data["troop"]["chars"]
+                if char["charId"] == reward["id"]
+            ),
+            None,
+        )
+        if existing is not None:
+            character = const_json_loader[CHARACTER_TABLE][reward["id"]]
+            potential_item_id = (
+                character["potentialItemId"]
+                if "potentialItemId" in character
+                else None
+            )
+            if not potential_item_id:
+                raise ValueError("duplicate_character_has_no_potential_item")
+            token = {"type": "MATERIAL", "id": potential_item_id, "count": count}
+            token_path = ["inventory", potential_item_id]
+            mutations.append(
+                {
+                    "path": token_path,
+                    "value": _planned_value(player_data, mutations, token_path) + count,
+                }
+            )
+            return {
+                "type": "CHAR",
+                "id": reward["id"],
+                "charGet": {
+                    "charInstId": existing[0],
+                    "charId": reward["id"],
+                    "isNew": 0,
+                    "itemGet": [token],
+                    "logInfo": {},
+                },
+            }
         char_mutations, char_inst_id = build_first_operator_grant(
             player_data, reward["id"]
         )
-        if char_inst_id is None:
-            raise ValueError("duplicate_character_reward_not_supported")
         mutations.extend(char_mutations)
         return {
             "type": "CHAR",

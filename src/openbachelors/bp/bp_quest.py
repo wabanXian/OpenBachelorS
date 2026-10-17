@@ -126,6 +126,7 @@ async def quest_battleStart(player_data, request: Request):
             ],
             ruleSource=session.get("ruleSource"),
             ruleCompleteness=session.get("ruleCompleteness"),
+            squadSnapshot=session.get("squadSnapshot", []),
         )
         await battle_protocol_audit.record_battle_start(
             request, request_json, response
@@ -235,6 +236,10 @@ async def quest_battleFinish(player_data, request: Request):
                 else None
             ),
             rewards=settled_session.get("rewards"),
+            favor=settled_session.get("rewards", {}).get("favor", []),
+            playerProgression=settled_session.get("rewards", {}).get(
+                "playerProgression"
+            ),
             ruleSource=settled_session.get("ruleSource"),
             ruleCompleteness=settled_session.get("ruleCompleteness"),
             unlockStages=response.get("unlockStages", []),
@@ -331,6 +336,22 @@ async def quest_getAssistList(player_data, request: Request):
         ]
 
     num_assist_page = get_num_assist_page(assist_lst)
+
+    # post_tutorial intentionally owns only the operators acquired by that
+    # account.  The legacy extended-assist builder derives candidates from the
+    # owned-character template, so a profession can legitimately have no
+    # configured candidates.  An empty assist page is valid; modulo zero is
+    # not.  Do not synthesize a friend or borrow an unowned operator here.
+    if num_assist_page == 0:
+        event(
+            request,
+            "assist_list_empty",
+            profession=request_json.get("profession"),
+            askRefresh=request_json.get("askRefresh"),
+            assistExt=bool(const_json_loader[CONFIG_JSON]["assist_ext"]),
+            reason="no_configured_assist_candidates",
+        )
+        return {"allowAskTs": 1700000000, "assistList": []}
 
     assist_page_idx = get_assist_page_idx(player_data, request_json) % num_assist_page
 

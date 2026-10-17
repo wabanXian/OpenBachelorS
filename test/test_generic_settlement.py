@@ -1,5 +1,6 @@
 from copy import deepcopy
 import json
+from pathlib import Path
 
 import pytest
 from starlette.requests import Request
@@ -15,6 +16,30 @@ from openbachelors.util.battle_settlement import (
 )
 from openbachelors.util.player_data import DeltaJson, OverlayJson, post_tutorial_player_data_template
 from openbachelors.util.settlement_rules import generated_rule_report, get_stage_rule
+
+
+ORDINARY_STAGE_IDS = sorted(
+    json.loads(Path("data/stage_settlement_generated.json").read_text(encoding="utf-8"))[
+        "stages"
+    ]
+)
+
+AUDITED_FIRST_PASS_EXPECTATIONS = {
+    "main_00-09": [("MATERIAL", "3003", 2)],
+    "main_00-10": [("CHAR", "char_212_ansel", 1), ("MATERIAL", "3112", 6)],
+    "main_00-11": [("CHAR", "char_208_melan", 1), ("MATERIAL", "3131", 15)],
+    "main_01-01": [("MATERIAL", "3105", 1), ("MATERIAL", "3131", 4)],
+    "main_01-07": [("CHAR", "char_278_orchid", 1)],
+    "main_01-08": [("MATERIAL", "3105", 1)],
+    "main_01-12": [("CHAR", "char_277_sqrrel", 1)],
+    "main_02-10": [("CHAR", "char_002_amiya", 1)],
+    "main_03-04": [("MATERIAL", "3105", 1)],
+    "main_03-08": [("CHAR", "char_002_amiya", 1)],
+    "main_04-07": [("MATERIAL", "3105", 1)],
+    "main_04-09": [("CHAR", "char_002_amiya", 1)],
+    "main_07-01": [("CHAR", "char_376_therex", 1)],
+    "main_07-16": [("CHAR", "char_002_amiya", 1)],
+}
 
 
 class FakeExtra:
@@ -123,6 +148,178 @@ def test_representative_generated_stages_settle_without_python_stage_branches(st
     assert value["dungeon"]["stages"][stage_id]["state"] == 3
     assert value["dungeon"]["stages"][stage_id]["completeTimes"] == 1
     assert settlement["session"]["ruleSource"] == "generated_ordinary_rule"
+
+
+def test_zero_five_audited_first_pass_rewards_allow_start_and_grant_assets():
+    value = player()
+    unlock(value, "main_00-05", [("tr_04", 3)])
+    skill_books_before = (
+        value["inventory"]["3301"] if "3301" in value["inventory"] else 0
+    )
+
+    start(value, "main_00-05", 100)
+    settlement = finish(value, result("main_00-05", 3, 100))
+
+    assert value["dungeon"]["stages"]["main_00-05"]["state"] == 3
+    assert value["inventory"]["3301"] == skill_books_before + 1
+    plume = next(
+        item
+        for item in settlement["response"]["firstRewards"]
+        if item["type"] == "CHAR" and item["id"] == "char_192_falco"
+    )
+    assert plume["charGet"]["charId"] == "char_192_falco"
+    assert any(
+        char["charId"] == "char_192_falco"
+        for _, char in value["troop"]["chars"]
+    )
+    assert value["mission"]["missions"]["MAIN"]["main_6"]["state"] == 2
+
+    first_inventory = value["inventory"].copy()
+    first_char_count = len(value["troop"]["chars"])
+    duplicate = prepare_battle_finish(
+        value, result("main_00-05", 3, 100), "retry-cipher"
+    )
+    assert duplicate["kind"] == "duplicate"
+    assert value["inventory"].copy() == first_inventory
+    assert len(value["troop"]["chars"]) == first_char_count
+
+
+def test_zero_eight_audited_lava_reward_allows_start_and_is_idempotent():
+    value = player()
+    unlock(value, "main_00-08", [("tr_06", 3)])
+
+    start(value, "main_00-08", 100)
+    settlement = finish(value, result("main_00-08", 3, 100))
+
+    assert value["dungeon"]["stages"]["main_00-08"]["state"] == 3
+    lava = next(
+        item
+        for item in settlement["response"]["firstRewards"]
+        if item["type"] == "CHAR" and item["id"] == "char_121_lava"
+    )
+    assert lava["charGet"]["charId"] == "char_121_lava"
+    assert any(
+        char["charId"] == "char_121_lava"
+        for _, char in value["troop"]["chars"]
+    )
+    assert value["mission"]["missions"]["MAIN"]["main_9"]["state"] == 2
+
+    first_inventory = value["inventory"].copy()
+    first_char_count = len(value["troop"]["chars"])
+    duplicate = prepare_battle_finish(
+        value, result("main_00-08", 3, 100), "retry-cipher"
+    )
+    assert duplicate["kind"] == "duplicate"
+    assert value["inventory"].copy() == first_inventory
+    assert len(value["troop"]["chars"]) == first_char_count
+
+
+@pytest.mark.parametrize("stage_id", ORDINARY_STAGE_IDS)
+def test_every_ordinary_stage_full_retry_and_star_upgrade_lifecycle(stage_id):
+    value = player()
+    rule, source = get_stage_rule(stage_id)
+    prerequisites = [
+        (
+            condition["stageId"],
+            3 if condition["completeState"] == "COMPLETE" else 2,
+        )
+        for condition in rule["unlockCondition"]
+    ]
+    unlock(value, stage_id, prerequisites)
+    ap_before = value["status"]["ap"]
+
+    failed_session = start(value, stage_id, 100)
+    interrupted = result(stage_id, 1, 100)
+    interrupted["interrupt"] = 1
+    failed = finish(value, interrupted)
+    assert failed["session"]["outcome"] == "interrupted"
+    assert value["status"]["ap"] == (
+        ap_before - rule["apCost"] + rule["apFailReturn"]
+    )
+    assert value["dungeon"]["stages"][stage_id]["state"] == 0
+
+    session = start(value, stage_id, 200)
+    two_star_result = result(stage_id, 2, 200)
+    settlement = finish(value, two_star_result)
+
+    assert source == "generated_ordinary_rule"
+    assert session["apCost"] == rule["apCost"]
+    assert failed_session["apFailReturn"] == rule["apFailReturn"]
+    assert value["dungeon"]["stages"][stage_id]["state"] == 2
+    assert value["dungeon"]["stages"][stage_id]["completeTimes"] == 1
+    assert {
+        (item["type"], item["id"])
+        for item in settlement["response"]["firstRewards"]
+        if item["type"] != "DIAMOND"
+    } == {(item["type"], item["id"]) for item in rule["firstPassRewards"]}
+
+    inventory_after_first = value["inventory"].copy()
+    char_count_after_first = len(value["troop"]["chars"])
+    duplicate = prepare_battle_finish(value, deepcopy(two_star_result), "retry-cipher")
+    assert duplicate["kind"] == "duplicate"
+    assert value["inventory"].copy() == inventory_after_first
+    assert len(value["troop"]["chars"]) == char_count_after_first
+
+    start(value, stage_id, 300)
+    upgraded = finish(value, result(stage_id, 3, 300))
+    assert value["dungeon"]["stages"][stage_id]["state"] == 3
+    assert value["dungeon"]["stages"][stage_id]["completeTimes"] == 2
+    assert not any(
+        (item["type"], item["id"])
+        in {(reward["type"], reward["id"]) for reward in rule["firstPassRewards"]}
+        for item in upgraded["response"]["firstRewards"]
+    )
+
+
+def test_story_duplicate_operator_reward_becomes_potential_token():
+    value = player()
+    rule, _ = get_stage_rule("main_02-10")
+    unlock(
+        value,
+        "main_02-10",
+        [
+            (
+                condition["stageId"],
+                3 if condition["completeState"] == "COMPLETE" else 2,
+            )
+            for condition in rule["unlockCondition"]
+        ],
+    )
+    token_before = (
+        value["inventory"]["p_char_002_amiya"]
+        if "p_char_002_amiya" in value["inventory"]
+        else 0
+    )
+    char_count_before = len(value["troop"]["chars"])
+
+    start(value, "main_02-10", 100)
+    settlement = finish(value, result("main_02-10", 3, 100))
+    reward = next(
+        item
+        for item in settlement["response"]["firstRewards"]
+        if item["type"] == "CHAR" and item["id"] == "char_002_amiya"
+    )
+
+    assert reward["charGet"]["isNew"] == 0
+    assert reward["charGet"]["itemGet"] == [
+        {"type": "MATERIAL", "id": "p_char_002_amiya", "count": 1}
+    ]
+    assert value["inventory"]["p_char_002_amiya"] == token_before + 1
+    assert len(value["troop"]["chars"]) == char_count_before
+
+
+@pytest.mark.parametrize(
+    ("stage_id", "expected"), AUDITED_FIRST_PASS_EXPECTATIONS.items()
+)
+def test_generated_first_pass_matches_independently_audited_expectations(
+    stage_id, expected
+):
+    rule, _ = get_stage_rule(stage_id)
+    actual = [
+        (reward["type"], reward["id"], reward["count"])
+        for reward in rule["firstPassRewards"]
+    ]
+    assert actual == expected
 
 
 @pytest.mark.parametrize("stars", [2, 3])
@@ -262,7 +459,8 @@ async def test_training_two_special_rule_grants_adnachiel_unlocks_and_exposes_su
     assert claim["items"] == [{"type": "CARD_EXP", "id": "2001", "count": 5}]
     assert duplicate["items"] == []
     assert value["inventory"]["2001"] == records_before + 5
-    assert value["mission"]["missionGroups"]["sub_g_1"] == 1
+    assert value["mission"]["missionGroups"]["sub_g_1"] == 0
+    assert value["mission"]["missions"]["SUB"]["sub_2"]["state"] == 2
 
 
 @pytest.mark.asyncio
@@ -306,8 +504,8 @@ async def test_training_three_special_rule_grants_jessica_unlocks_and_exposes_su
 def test_coverage_report_has_conservative_boundaries():
     report = generated_rule_report()
     assert report["ordinaryStageCount"] == 255
-    assert report["settlementEnabledCount"] == 239
-    assert report["completeRuleCount"] == 238
+    assert report["settlementEnabledCount"] == 255
+    assert report["completeRuleCount"] == 254
     assert report["approximateDropStageCount"] == 254
     assert "main_12-14" in report["stagesWithoutExactMatrix"]
-    assert len(report["stagesWithUnconfirmedFirstPassRewards"]) == 16
+    assert len(report["stagesWithUnconfirmedFirstPassRewards"]) == 0

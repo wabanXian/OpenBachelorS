@@ -911,8 +911,8 @@
       "stageType": "MAIN",
       "zoneId": "main_0",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 6,
       "apFailReturn": 6,
       "expGain": 60,
@@ -924,21 +924,22 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "MATERIAL",
           "id": "3301",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "target": "inventory.3301",
+          "evidence": "stage_table ONCE+ALWAYS; Arknights Bilibili Wiki 0-5 lists Skill Summary 1 x1"
         },
         {
           "type": "CHAR",
           "id": "char_192_falco",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "evidence": "stage_table ONCE+ALWAYS; Arknights Bilibili Wiki 0-5 lists Plume recruitment contract x1"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "CARD_EXP",
@@ -1578,8 +1579,8 @@
       "stageType": "MAIN",
       "zoneId": "main_0",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 6,
       "apFailReturn": 6,
       "expGain": 60,
@@ -1591,15 +1592,15 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "CHAR",
           "id": "char_121_lava",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "evidence": "stage_table ONCE+ALWAYS; Arknights Wiki 0-8 lists Lava as the first-clear operator reward"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "CARD_EXP",
@@ -1803,8 +1804,8 @@
       "stageType": "MAIN",
       "zoneId": "main_0",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 6,
       "apFailReturn": 6,
       "expGain": 60,
@@ -1816,15 +1817,18 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "MATERIAL",
           "id": "3003",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 2,
+          "trigger": "first_pass",
+          "localEvidence": "stage_table ONCE+ALWAYS Pure Gold",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Pure_Gold",
+          "verificationStatus": "cross_checked"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "CARD_EXP",
@@ -2028,8 +2032,8 @@
       "stageType": "MAIN",
       "zoneId": "main_0",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 6,
       "apFailReturn": 6,
       "expGain": 60,
@@ -2041,21 +2045,27 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "CHAR",
           "id": "char_212_ansel",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "trigger": "first_pass",
+          "localEvidence": "stage_table ONCE+ALWAYS Ansel",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Ansel/Overview",
+          "verificationStatus": "cross_checked"
         },
         {
           "type": "MATERIAL",
           "id": "3112",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 6,
+          "trigger": "first_pass",
+          "localEvidence": "stage_table ONCE+ALWAYS Carbon Stick",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Carbon_Stick",
+          "verificationStatus": "cross_checked"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "CARD_EXP",
@@ -2259,8 +2269,8 @@
       "stageType": "MAIN",
       "zoneId": "main_0",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 6,
       "apFailReturn": 6,
       "expGain": 60,
@@ -2272,21 +2282,27 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "CHAR",
           "id": "char_208_melan",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "trigger": "first_pass",
+          "localEvidence": "stage_table ONCE+ALWAYS Melantha",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Melantha/Overview",
+          "verificationStatus": "cross_checked"
         },
         {
           "type": "MATERIAL",
           "id": "3131",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 15,
+          "trigger": "first_pass",
+          "localEvidence": "stage_table ONCE+ALWAYS Light Building Material",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Light_Building_Material",
+          "verificationStatus": "cross_checked"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "CARD_EXP",
@@ -2490,29 +2506,35 @@
       "stageType": "MAIN",
       "zoneId": "main_1",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 6,
       "apFailReturn": 6,
       "expGain": 60,
       "goldGain": 0,
       "diamondOnceDrop": 1,
       "unlockCondition": [],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "MATERIAL",
           "id": "3105",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "trigger": "first_pass",
+          "localEvidence": "stage_table ONCE+ALWAYS Keel",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Keel",
+          "verificationStatus": "cross_checked"
         },
         {
           "type": "MATERIAL",
           "id": "3131",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 4,
+          "trigger": "first_pass",
+          "localEvidence": "stage_table ONCE+ALWAYS Light Building Material",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Light_Building_Material",
+          "verificationStatus": "cross_checked"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "CARD_EXP",
@@ -3576,8 +3598,8 @@
       "stageType": "MAIN",
       "zoneId": "main_1",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 6,
       "apFailReturn": 6,
       "expGain": 60,
@@ -3589,15 +3611,18 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "CHAR",
           "id": "char_278_orchid",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "trigger": "first_pass",
+          "localEvidence": "stage_table ONCE+ALWAYS Orchid",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Orchid/Overview",
+          "verificationStatus": "cross_checked"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "CARD_EXP",
@@ -3816,8 +3841,8 @@
       "stageType": "MAIN",
       "zoneId": "main_1",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 9,
       "apFailReturn": 9,
       "expGain": 90,
@@ -3829,15 +3854,18 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "MATERIAL",
           "id": "3105",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "trigger": "first_pass",
+          "localEvidence": "stage_table ONCE+ALWAYS Keel",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Keel",
+          "verificationStatus": "cross_checked"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "CARD_EXP",
@@ -4522,8 +4550,8 @@
       "stageType": "MAIN",
       "zoneId": "main_1",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 9,
       "apFailReturn": 9,
       "expGain": 90,
@@ -4535,15 +4563,18 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "CHAR",
           "id": "char_277_sqrrel",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "trigger": "first_pass",
+          "localEvidence": "stage_table ONCE+ALWAYS Shaw",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Shaw",
+          "verificationStatus": "cross_checked"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "CARD_EXP",
@@ -9142,8 +9173,8 @@
       "stageType": "MAIN",
       "zoneId": "main_2",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 15,
       "apFailReturn": 15,
       "expGain": 150,
@@ -9155,15 +9186,19 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "CHAR",
           "id": "char_002_amiya",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "trigger": "first_pass",
+          "duplicatePolicy": "potential_token_only",
+          "localEvidence": "stage_table ONCE+ALWAYS Amiya; character_table potentialItemId=p_char_002_amiya",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Amiya/Overview",
+          "verificationStatus": "cross_checked"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "CARD_EXP",
@@ -9986,8 +10021,8 @@
       "stageType": "MAIN",
       "zoneId": "main_3",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 15,
       "apFailReturn": 15,
       "expGain": 150,
@@ -9999,15 +10034,18 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "MATERIAL",
           "id": "3105",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "trigger": "first_pass",
+          "localEvidence": "stage_table ONCE+ALWAYS Keel",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Keel",
+          "verificationStatus": "cross_checked"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "MATERIAL",
@@ -10815,8 +10853,8 @@
       "stageType": "MAIN",
       "zoneId": "main_3",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 18,
       "apFailReturn": 18,
       "expGain": 180,
@@ -10828,15 +10866,19 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "CHAR",
           "id": "char_002_amiya",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "trigger": "first_pass",
+          "duplicatePolicy": "potential_token_only",
+          "localEvidence": "stage_table ONCE+ALWAYS Amiya; character_table potentialItemId=p_char_002_amiya",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Amiya/Overview",
+          "verificationStatus": "cross_checked"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "MATERIAL",
@@ -14120,8 +14162,8 @@
       "stageType": "MAIN",
       "zoneId": "main_4",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 18,
       "apFailReturn": 18,
       "expGain": 180,
@@ -14133,15 +14175,18 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "MATERIAL",
           "id": "3105",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "trigger": "first_pass",
+          "localEvidence": "stage_table ONCE+ALWAYS Keel",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Keel",
+          "verificationStatus": "cross_checked"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "MATERIAL",
@@ -14751,8 +14796,8 @@
       "stageType": "MAIN",
       "zoneId": "main_4",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 21,
       "apFailReturn": 21,
       "expGain": 210,
@@ -14764,15 +14809,19 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "CHAR",
           "id": "char_002_amiya",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "trigger": "first_pass",
+          "duplicatePolicy": "potential_token_only",
+          "localEvidence": "stage_table ONCE+ALWAYS Amiya; character_table potentialItemId=p_char_002_amiya",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Amiya/Overview",
+          "verificationStatus": "cross_checked"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "MATERIAL",
@@ -20342,8 +20391,8 @@
       "stageType": "MAIN",
       "zoneId": "main_7",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 18,
       "apFailReturn": 18,
       "expGain": 180,
@@ -20355,15 +20404,18 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "CHAR",
           "id": "char_376_therex",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "trigger": "first_pass",
+          "localEvidence": "stage_table ONCE+ALWAYS THRM-EX",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/THRM-EX/Overview",
+          "verificationStatus": "cross_checked"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "MATERIAL",
@@ -23742,8 +23794,8 @@
       "stageType": "MAIN",
       "zoneId": "main_7",
       "difficulty": "NORMAL",
-      "settlementEnabled": false,
-      "ruleCompleteness": "partial",
+      "settlementEnabled": true,
+      "ruleCompleteness": "complete",
       "apCost": 21,
       "apFailReturn": 21,
       "expGain": 210,
@@ -23755,15 +23807,19 @@
           "completeState": "PASS"
         }
       ],
-      "firstPassRewards": [],
-      "unconfirmedFirstPassRewards": [
+      "firstPassRewards": [
         {
           "type": "CHAR",
           "id": "char_002_amiya",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
+          "count": 1,
+          "trigger": "first_pass",
+          "duplicatePolicy": "potential_token_only",
+          "localEvidence": "stage_table ONCE+ALWAYS Amiya; character_table potentialItemId=p_char_002_amiya",
+          "sourceUrl": "https://arknights.wiki.gg/wiki/Amiya/Overview",
+          "verificationStatus": "cross_checked"
         }
       ],
+      "unconfirmedFirstPassRewards": [],
       "dropRules": [
         {
           "type": "MATERIAL",
@@ -63302,164 +63358,11 @@
   },
   "report": {
     "ordinaryStageCount": 255,
-    "settlementEnabledCount": 239,
-    "completeRuleCount": 238,
+    "settlementEnabledCount": 255,
+    "completeRuleCount": 254,
     "approximateDropStageCount": 254,
     "deterministicOnlyStageCount": 1,
-    "stagesWithUnconfirmedFirstPassRewards": {
-      "main_00-05": [
-        {
-          "type": "MATERIAL",
-          "id": "3301",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        },
-        {
-          "type": "CHAR",
-          "id": "char_192_falco",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_00-08": [
-        {
-          "type": "CHAR",
-          "id": "char_121_lava",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_00-09": [
-        {
-          "type": "MATERIAL",
-          "id": "3003",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_00-10": [
-        {
-          "type": "CHAR",
-          "id": "char_212_ansel",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        },
-        {
-          "type": "MATERIAL",
-          "id": "3112",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_00-11": [
-        {
-          "type": "CHAR",
-          "id": "char_208_melan",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        },
-        {
-          "type": "MATERIAL",
-          "id": "3131",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_01-01": [
-        {
-          "type": "MATERIAL",
-          "id": "3105",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        },
-        {
-          "type": "MATERIAL",
-          "id": "3131",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_01-07": [
-        {
-          "type": "CHAR",
-          "id": "char_278_orchid",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_01-08": [
-        {
-          "type": "MATERIAL",
-          "id": "3105",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_01-12": [
-        {
-          "type": "CHAR",
-          "id": "char_277_sqrrel",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_02-10": [
-        {
-          "type": "CHAR",
-          "id": "char_002_amiya",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_03-04": [
-        {
-          "type": "MATERIAL",
-          "id": "3105",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_03-08": [
-        {
-          "type": "CHAR",
-          "id": "char_002_amiya",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_04-07": [
-        {
-          "type": "MATERIAL",
-          "id": "3105",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_04-09": [
-        {
-          "type": "CHAR",
-          "id": "char_002_amiya",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_07-01": [
-        {
-          "type": "CHAR",
-          "id": "char_376_therex",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ],
-      "main_07-16": [
-        {
-          "type": "CHAR",
-          "id": "char_002_amiya",
-          "count": null,
-          "evidence": "stage_table.displayDetailRewards ONCE"
-        }
-      ]
-    },
+    "stagesWithUnconfirmedFirstPassRewards": {},
     "stagesWithoutExactMatrix": [
       "main_12-14"
     ],
@@ -65202,32 +65105,32 @@
     "chapterCoverage": {
       "main_0": {
         "ordinary": 11,
-        "enabled": 6,
-        "complete": 6,
+        "enabled": 11,
+        "complete": 11,
         "approximate": 11
       },
       "main_1": {
         "ordinary": 10,
-        "enabled": 6,
-        "complete": 6,
+        "enabled": 10,
+        "complete": 10,
         "approximate": 10
       },
       "main_2": {
         "ordinary": 22,
-        "enabled": 21,
-        "complete": 21,
+        "enabled": 22,
+        "complete": 22,
         "approximate": 22
       },
       "main_3": {
         "ordinary": 15,
-        "enabled": 13,
-        "complete": 13,
+        "enabled": 15,
+        "complete": 15,
         "approximate": 15
       },
       "main_4": {
         "ordinary": 20,
-        "enabled": 18,
-        "complete": 18,
+        "enabled": 20,
+        "complete": 20,
         "approximate": 20
       },
       "main_5": {
@@ -65244,8 +65147,8 @@
       },
       "main_7": {
         "ordinary": 18,
-        "enabled": 16,
-        "complete": 16,
+        "enabled": 18,
+        "complete": 18,
         "approximate": 18
       },
       "main_8": {

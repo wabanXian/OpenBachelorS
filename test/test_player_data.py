@@ -259,14 +259,25 @@ async def test_player_data(db_pool_fixture):
 
     response.pop("pushMessage", None)
 
-    assert response == {
-        "playerDataDelta": {"modified": {"status": {"ap": 789}}, "deleted": {}}
+    delta = response["playerDataDelta"]
+    assert delta["deleted"] == {}
+    assert delta["modified"]["status"] == {"ap": 789}
+    assert delta["modified"]["mission"]["missionGroups"] == {
+        "guide_g_1": 0,
+        "main_1": 0,
     }
+    assert delta["modified"]["mission"]["missions"]["MAIN"]["main_1"][
+        "state"
+    ] == 2
 
     player_data = await PlayerData.create()
 
-    assert player_data.sav_delta_json.modified_dict == {"status": {"ap": 789}}
-    assert player_data.sav_delta_json.deleted_dict == {"status": {"ap": None}}
+    assert player_data.sav_delta_json.modified_dict["status"] == {"ap": 789}
+    assert player_data.sav_delta_json.modified_dict["mission"]["missionGroups"] == {
+        "guide_g_1": 0,
+        "main_1": 0,
+    }
+    assert player_data.sav_delta_json.deleted_dict["status"] == {"ap": None}
 
     assert player_data.sav_pending_delta_json.modified_dict == {}
     assert player_data.sav_pending_delta_json.deleted_dict == {}

@@ -65,6 +65,8 @@ def test_post_tutorial_has_no_precompleted_progress_or_rewards():
             "noCostCnt": 0,
         }
     }
+    # Account-specific mission state must not live in the shared immutable
+    # template; PlayerData.create reconciles it after applying the save delta.
     assert all(not missions for missions in preset["mission"]["missions"].values())
     assert preset["mission"]["missionGroups"] == {}
     assert preset["status"]["flags"] == {"init": 1}
@@ -188,7 +190,64 @@ async def test_sync_data_response_contains_fresh_account(monkeypatch):
                 "noCostCnt": 0,
             }
         }
-        assert user["mission"]["missionGroups"] == {}
-        assert all(not missions for missions in user["mission"]["missions"].values())
+        assert user["mission"]["missionGroups"] == {"guide_g_1": 0, "main_1": 0}
+        assert user["mission"]["missions"]["MAIN"]["main_1"] == {
+            "progress": [{"target": 1, "value": 0}],
+            "state": 2,
+        }
+        assert len(user["mission"]["missions"]["GUIDE"]) == 9
+    finally:
+        shutil.rmtree(save_root, ignore_errors=True)
+
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_sync_data_repairs_and_persists_legacy_hidden_missions(monkeypatch):
+    save_root = Path("test") / f".sync_mission_legacy_{uuid4().hex}"
+    monkeypatch.setattr(
+        player_data_module, "MULTI_USER_SAV_DIRPATH", str(save_root / "multi_sav")
+    )
+    initial = await PlayerData.create(
+        player_id="legacy-mission-contract", preset="post_tutorial"
+    )
+    initial["mission"]["missionGroups"]["guide_g_1"] = 1
+    initial["mission"]["missions"]["GUIDE"]["guide_1"] = {
+        "progress": [{"target": 1, "value": 0}],
+        "state": 1,
+    }
+    initial["mission"]["missions"]["GUIDE"]["guide_6"] = {
+        "progress": [{"target": 1, "value": 1}],
+        "state": 3,
+    }
+    initial.build_delta_response()
+    await initial.save()
+
+    create_player_data = PlayerData.create
+
+    async def create_post_tutorial_player(*, request):
+        return await create_player_data(request=request, preset="post_tutorial")
+
+    monkeypatch.setattr(bp_account.PlayerData, "create", create_post_tutorial_player)
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "path": "/account/syncData",
+        "headers": [(b"secret", b"legacy-mission-contract")],
+    }
+    try:
+        response = await bp_account.account_syncData(Request(scope))
+        user = json.loads(response.body)["user"]
+        assert user["mission"]["missionGroups"]["guide_g_1"] == 0
+        assert user["mission"]["missions"]["GUIDE"]["guide_1"] == {
+            "progress": [{"target": 1, "value": 0}],
+            "state": 2,
+        }
+        assert user["mission"]["missions"]["GUIDE"]["guide_6"]["state"] == 3
+
+        reloaded = await create_player_data(
+            player_id="legacy-mission-contract", preset="post_tutorial"
+        )
+        assert reloaded["mission"]["missionGroups"]["guide_g_1"] == 0
+        assert reloaded["mission"]["missions"]["GUIDE"]["guide_1"]["state"] == 2
+        assert reloaded["mission"]["missions"]["GUIDE"]["guide_6"]["state"] == 3
     finally:
         shutil.rmtree(save_root, ignore_errors=True)

@@ -1,5 +1,6 @@
 import os
 import json
+from collections import Counter
 
 from fastapi import APIRouter
 from fastapi import Request
@@ -17,6 +18,18 @@ from ..util.log_helper import IS_DEBUG
 from ..util.tutorial_debug import event, player_snapshot
 
 router = APIRouter()
+
+
+def mission_state_counts(player_data):
+    result = {}
+    for mission_type in ("MAIN", "SUB", "GUIDE"):
+        missions = player_data["mission"]["missions"][mission_type]
+        counts = Counter(mission["state"] for _, mission in missions)
+        result[mission_type] = {
+            "total": len(missions),
+            "states": {str(state): count for state, count in sorted(counts.items())},
+        }
+    return result
 
 
 def recover_ap(player_data, now):
@@ -71,6 +84,7 @@ async def account_syncData(request: Request):
         "sync_data_initial_state",
         preset=getattr(player_data, "preset", None),
         state=player_snapshot(player_data),
+        missionStateCounts=mission_state_counts(player_data),
         responseBodyLogging="suppressed",
     )
 
@@ -102,6 +116,7 @@ async def account_syncData(request: Request):
         modifiedTopLevel=sorted(delta_response["modified"]),
         deletedTopLevel=sorted(delta_response["deleted"]),
         state=player_snapshot(player_data),
+        missionStateCounts=mission_state_counts(player_data),
     )
 
     player_data_json_obj = player_data.copy()

@@ -70,9 +70,9 @@ from .player_preset import (
     get_player_preset,
 )
 from .tutorial_debug import event as tutorial_event, player_snapshot
+from .mission_lifecycle import reconcile_visible_missions
 from .battle_settlement import (
     reconcile_pending_session,
-    repair_missing_main_one_mission,
 )
 
 logger = logging.getLogger(__name__)
@@ -1308,15 +1308,16 @@ class PlayerData(OverlayJson, SavableThing):
         player_data.preset = preset
         recovery = reconcile_pending_session(player_data)
         schema_repairs = repair_missing_char_equip_fields(player_data)
-        if preset == POST_TUTORIAL_PRESET and repair_missing_main_one_mission(
-            player_data
-        ):
-            schema_repairs.append(
-                {
-                    "missionId": "main_1",
-                    "reason": "main_00-01_passed_before_mission_support",
-                }
-            )
+        if preset == POST_TUTORIAL_PRESET:
+            mission_changes = reconcile_visible_missions(player_data)
+            if mission_changes:
+                schema_repairs.append(
+                    {
+                        "reason": "mission_visibility_lifecycle_reconciled",
+                        "changeCount": len(mission_changes),
+                        "changes": mission_changes,
+                    }
+                )
         # Iterating overlay-only operators creates empty traversal branches;
         # keep actual schema repairs while removing those read artifacts.
         sav_delta_json.prune_empty_branches()
