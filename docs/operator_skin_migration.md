@@ -40,3 +40,29 @@ Repair refuses a non-empty pending delta, creates a complete ZIP backup under
 `troop.chars.*.skin` / `tmpl.*.skinId` paths. It never deletes or adds
 `skin.characterSkins` or `skin.skinTs`; legacy ownership cleanup remains a
 separate, evidence-dependent decision.
+
+## Explicit legacy ownership revocation
+
+`audit` also reports `ownershipRemovalCandidates`. A candidate must be a real
+outfit (`isBuySkin=true`), not an evolve/patch built-in, match the exact outfit
+equipped by the old sandbox source operator, and belong to an operator on the
+account. The report includes save-local acquisition evidence and keeps any
+non-matching outfit under `uncertainExtraOutfits`.
+
+After reviewing that preview, ownership cleanup is a separate explicit action:
+
+```powershell
+uv run operator-skin-save revoke-legacy-outfits --username test123 --yes
+```
+
+This action makes a full ZIP backup, repairs any still-matching legacy equipped
+skin, removes only previewed outfit keys from `characterSkins`, `skinTs`, and
+`skinSp`, and retains/adds the operator's resource-defined built-in skin. It
+does not touch level, trust, potential, skills, modules, stages, building,
+missions, inventory, currencies, or tutorial progress. Deletions are written
+as overlay tombstones, so the post_tutorial base template cannot restore them
+on reload. No action runs automatically at login.
+
+Legitimate `CHAR_SKIN` mission/activity rewards remain supported: they add the
+skin ownership and timestamp once and repeated reward application is
+idempotent.

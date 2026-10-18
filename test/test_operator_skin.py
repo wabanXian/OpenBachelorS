@@ -6,7 +6,11 @@ from uuid import uuid4
 import pytest
 
 from openbachelors.bp.bp_gacha import grant_gacha_character
-from openbachelors.tool.operator_skin_save import audit_save, repair_save
+from openbachelors.tool.operator_skin_save import (
+    audit_save,
+    repair_save,
+    revoke_legacy_outfits,
+)
 from openbachelors.util.operator_skin import (
     default_evolve_skin,
     default_template_skin,
@@ -18,6 +22,7 @@ from openbachelors.util.player_data import (
     post_tutorial_player_data_template,
     sandbox_player_data_template,
 )
+from openbachelors.util.reward_grant import apply_reward_immediate, plan_reward
 
 
 def fresh_player():
@@ -145,3 +150,90 @@ def test_skin_save_audit_and_explicit_repair_are_minimal(monkeypatch):
     finally:
         monkeypatch.undo()
         shutil.rmtree(root, ignore_errors=True)
+
+
+def test_explicit_legacy_outfit_revocation_survives_overlay_reload(monkeypatch):
+    root = Path("test") / f".operator_skin_revoke_{uuid4().hex}"
+    save_dir = (root / "multi_sav" / "presets" / "post_tutorial" / "copy").resolve()
+    save_dir.mkdir(parents=True)
+    player = fresh_player()
+    result = grant_gacha_character(player, "char_120_hibisc")
+    inst_id = str(result["charInstId"])
+    wrong = "char_120_hibisc@nian#1"
+    default = "char_120_hibisc#1"
+    player["troop"]["chars"][inst_id]["skin"] = wrong
+    player["skin"]["characterSkins"][wrong] = 1
+    player["skin"]["skinTs"][wrong] = 1700000000
+    player["skin"]["skinSp"][wrong] = {"state": 1}
+    player["status"]["progress"] = 1111
+    before_troop_count = len(player["troop"]["chars"])
+    delta_obj = {
+        "modified": player.delta_json.modified_dict,
+        "deleted": player.delta_json.deleted_dict,
+    }
+    (save_dir / "delta.json").write_text(json.dumps(delta_obj), encoding="utf-8")
+    (save_dir / "pending_delta.json").write_text(
+        json.dumps({"modified": {}, "deleted": {}}), encoding="utf-8"
+    )
+    (save_dir / "extra.json").write_text("{}", encoding="utf-8")
+    monkeypatch.chdir(root)
+    try:
+        preview = audit_save(save_dir)
+        assert preview["ownershipRemovalCandidateCount"] == 1
+        assert preview["ownershipRemovalCandidates"][0]["skinId"] == wrong
+        assert preview["ownershipRemovalCandidates"][0]["classification"] == (
+            "confirmed_legacy_sandbox_grant"
+        )
+        with pytest.raises(RuntimeError, match="without --yes"):
+            revoke_legacy_outfits(save_dir)
+
+        archive, result_report = revoke_legacy_outfits(save_dir, yes=True)
+        assert archive.is_file()
+        assert f"skin.characterSkins.{wrong}" in result_report["changedPaths"]
+        final = audit_save(save_dir)
+        assert final["ownershipRemovalCandidateCount"] == 0
+        _, _, _, reloaded = __import__(
+            "openbachelors.tool.operator_skin_save", fromlist=["_load_overlay"]
+        )._load_overlay(save_dir)
+        assert wrong not in reloaded["skin"]["characterSkins"]
+        assert wrong not in reloaded["skin"]["skinTs"]
+        assert wrong not in reloaded["skin"]["skinSp"]
+        assert default in reloaded["skin"]["characterSkins"]
+        assert reloaded["troop"]["chars"][inst_id]["skin"] == default
+        assert reloaded["status"]["progress"] == 1111
+        assert len(reloaded["troop"]["chars"]) == before_troop_count
+    finally:
+        monkeypatch.undo()
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_legitimate_skin_reward_unlocks_once(monkeypatch):
+    player = fresh_player()
+    skin_id = "char_120_hibisc@nian#1"
+    monkeypatch.setattr("openbachelors.util.reward_grant.time.time", lambda: 1800000000)
+
+    first = apply_reward_immediate(
+        player, {"type": "CHAR_SKIN", "id": skin_id, "count": 1}
+    )
+    second = apply_reward_immediate(
+        player, {"type": "CHAR_SKIN", "id": skin_id, "count": 1}
+    )
+    assert first["count"] == 1
+    assert second["count"] == 0
+    assert player["skin"]["characterSkins"][skin_id] == 1
+    assert player["skin"]["skinTs"][skin_id] == 1800000000
+
+    mutations = []
+    other = "char_211_adnach@sale#5"
+    planned = plan_reward(
+        player, mutations, {"type": "CHAR_SKIN", "id": other, "count": 1}
+    )
+    duplicate = plan_reward(
+        player, mutations, {"type": "CHAR_SKIN", "id": other, "count": 1}
+    )
+    assert planned["count"] == 1
+    assert duplicate["count"] == 0
+    assert [mutation["path"] for mutation in mutations] == [
+        ["skin", "characterSkins", other],
+        ["skin", "skinTs", other],
+    ]

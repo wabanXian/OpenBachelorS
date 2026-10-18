@@ -2,7 +2,9 @@
 
 from copy import deepcopy
 
-from ..const.filepath import CHARACTER_TABLE
+import time
+
+from ..const.filepath import CHARACTER_TABLE, SKIN_TABLE
 from .character_grant import build_first_operator_grant
 from .const_json_loader import const_json_loader
 
@@ -110,6 +112,21 @@ def plan_reward(player_data, mutations, reward, platform=2):
                 "isNew": 1,
             },
         }
+    if reward_type == "CHAR_SKIN":
+        skin_id = reward["id"]
+        if skin_id not in const_json_loader[SKIN_TABLE]["charSkins"]:
+            raise ValueError(f"unknown_character_skin:{skin_id}")
+        owned_path = ["skin", "characterSkins", skin_id]
+        timestamp_path = ["skin", "skinTs", skin_id]
+        already_owned = bool(_planned_value(player_data, mutations, owned_path))
+        if not already_owned:
+            mutations.extend(
+                [
+                    {"path": owned_path, "value": 1},
+                    {"path": timestamp_path, "value": int(time.time())},
+                ]
+            )
+        return {"type": reward_type, "id": skin_id, "count": 0 if already_owned else 1}
     if reward_type == "DIAMOND":
         field = "iosDiamond" if platform == 1 else "androidDiamond"
         path = ["status", field]
@@ -128,6 +145,17 @@ def plan_reward(player_data, mutations, reward, platform=2):
 
 def apply_reward_immediate(player_data, reward):
     """Apply a validated mission reward in the decorator's single save unit."""
+    if reward["type"] == "CHAR_SKIN":
+        skin_id = reward["id"]
+        if skin_id not in const_json_loader[SKIN_TABLE]["charSkins"]:
+            raise ValueError(f"unknown_character_skin:{skin_id}")
+        already_owned = skin_id in player_data["skin"]["characterSkins"]
+        if not already_owned:
+            player_data["skin"]["characterSkins"][skin_id] = 1
+            player_data["skin"]["skinTs"][skin_id] = int(time.time())
+        result = deepcopy(reward)
+        result["count"] = 0 if already_owned else 1
+        return result
     path = reward_target_path(reward)
     if path is None:
         raise ValueError(f"unsupported_reward_type:{reward['type']}")

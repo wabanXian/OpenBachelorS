@@ -8,7 +8,7 @@ import shutil
 
 from ..const.filepath import SKIN_TABLE
 from ..util.const_json_loader import const_json_loader
-from ..util.operator_skin import equip_resource_default_skin
+from ..util.operator_skin import equip_resource_default_skin, equipped_skin_id
 from ..util.player_data import (
     DeltaJson,
     OverlayJson,
@@ -53,7 +53,7 @@ def _sandbox_char_by_id(char_id):
 
 
 def audit_save(save_dir):
-    _, _, pending, player = _load_overlay(save_dir)
+    _, delta_obj, pending, player = _load_overlay(save_dir)
     skin_ts = player["skin"]["skinTs"].copy()
     records = []
     candidates = []
@@ -147,6 +147,63 @@ def audit_save(save_dir):
         )
         for skin_id in sorted(owned)
     ]
+    owned_char_inst = {
+        char["charId"]: int(inst_id) for inst_id, char in player["troop"]["chars"]
+    }
+    removal_candidates = []
+    for record in owned_records:
+        if not (
+            record["isBuySkin"]
+            and record["legacySandboxValueMatch"]
+            and record["charId"] in owned_char_inst
+            and not record["isBuiltInSkin"]
+        ):
+            continue
+        inst_id = owned_char_inst[record["charId"]]
+        char = player["troop"]["chars"][str(inst_id)].copy()
+        default = equip_resource_default_skin(char, char.get("evolvePhase", 0))
+        default_skin = (
+            default["tmpl"][default["currentTmpl"]]["skinId"]
+            if default.get("currentTmpl")
+            else default.get("skin")
+        )
+        removal_candidates.append(
+            {
+                **record,
+                "classification": "confirmed_legacy_sandbox_grant",
+                "charInstId": inst_id,
+                "replacementDefaultSkin": default_skin,
+                "replacementSkinTs": record["skinTs"],
+                "skinSpPresent": record["skinId"] in player["skin"]["skinSp"],
+                "evidence": [
+                    "extra outfit equals the old sandbox source operator's equipped skin",
+                    "old normal-account grant code copied that sandbox operator and granted its equipped skin",
+                    "operator is present in the account and the outfit is not a built-in evolve/patch skin",
+                    "no independent purchase/mail/activity acquisition record exists in this save",
+                ],
+                "timestampAssessment": (
+                    "dynamic legacy gacha grant timestamp"
+                    if record["skinTs"] != 1700000000
+                    else "fixed legacy character-grant timestamp"
+                ),
+            }
+        )
+    uncertain_owned = [
+        record
+        for record in owned_records
+        if record["isBuySkin"]
+        and record["skinId"] not in {
+            candidate["skinId"] for candidate in removal_candidates
+        }
+    ]
+    retained_defaults = []
+    for _, char_value in player["troop"]["chars"]:
+        char = char_value.copy()
+        expected = equip_resource_default_skin(char, char.get("evolvePhase", 0))
+        skin_id = equipped_skin_id(expected)
+        if skin_id:
+            retained_defaults.append(skin_id)
+    retained_defaults = sorted(set(retained_defaults))
     return {
         "saveDir": str(save_dir),
         "operatorCount": len(records),
@@ -158,8 +215,20 @@ def audit_save(save_dir):
         "repairCandidateOperatorCount": len(
             {candidate["charInstId"] for candidate in candidates}
         ),
+        "ownershipRemovalCandidates": removal_candidates,
+        "ownershipRemovalCandidateCount": len(removal_candidates),
+        "uncertainExtraOutfits": uncertain_owned,
+        "retainedBuiltInSkins": retained_defaults,
+        "acquisitionEvidenceFields": {
+            "mailModified": "mail" in delta_obj.get("modified", {}),
+            "shopModified": "shop" in delta_obj.get("modified", {}),
+            "activityModified": "activity" in delta_obj.get("modified", {}),
+            "skinSp": player["skin"]["skinSp"].copy(),
+            "deltaTopLevel": sorted(delta_obj.get("modified", {})),
+        },
         "ownershipPolicy": (
-            "report-only: equipped/template repair never deletes characterSkins or skinTs"
+            "audit is read-only; repair changes equipment only; "
+            "revoke-legacy-outfits removes only previewed confirmed candidates"
         ),
     }
 
@@ -230,9 +299,60 @@ def repair_save(save_dir, *, yes=False):
     return archive, {**report, "changedPaths": sorted(allowed), "before": before, "after": after}
 
 
+def revoke_legacy_outfits(save_dir, *, yes=False):
+    """Repair equipment and revoke only previewed sandbox-derived outfits."""
+    if not yes:
+        raise RuntimeError("refusing to modify a save without --yes")
+    report = audit_save(save_dir)
+    if not report["pendingDeltaEmpty"]:
+        raise RuntimeError("refusing repair while pending_delta is not empty")
+    candidates = report["ownershipRemovalCandidates"]
+    if not candidates:
+        raise RuntimeError("no confirmed legacy outfit ownership candidates found")
+    delta_path, delta_obj, _, player = _load_overlay(save_dir)
+    changed_paths = set()
+
+    # Preserve the equipment-only repair behavior as part of the comprehensive
+    # action, using exactly the already-previewed legacy matches.
+    for candidate in report["repairCandidates"]:
+        relative = candidate["path"].split(".")
+        _set_path(player, relative, candidate["expected"])
+        changed_paths.add(candidate["path"])
+
+    for candidate in candidates:
+        skin_id = candidate["skinId"]
+        default_skin = candidate["replacementDefaultSkin"]
+        timestamp = candidate["replacementSkinTs"]
+        if skin_id in player["skin"]["characterSkins"]:
+            del player["skin"]["characterSkins"][skin_id]
+            changed_paths.add(f"skin.characterSkins.{skin_id}")
+        if skin_id in player["skin"]["skinTs"]:
+            del player["skin"]["skinTs"][skin_id]
+            changed_paths.add(f"skin.skinTs.{skin_id}")
+        if skin_id in player["skin"]["skinSp"]:
+            del player["skin"]["skinSp"][skin_id]
+            changed_paths.add(f"skin.skinSp.{skin_id}")
+        if default_skin not in player["skin"]["characterSkins"]:
+            player["skin"]["characterSkins"][default_skin] = 1
+            changed_paths.add(f"skin.characterSkins.{default_skin}")
+        if default_skin not in player["skin"]["skinTs"]:
+            player["skin"]["skinTs"][default_skin] = timestamp
+            changed_paths.add(f"skin.skinTs.{default_skin}")
+
+    archive = backup_save(save_dir)
+    tmp_path = delta_path.with_suffix(".json.tmp")
+    tmp_path.write_text(
+        json.dumps(delta_obj, ensure_ascii=False, indent=4), encoding="utf-8"
+    )
+    tmp_path.replace(delta_path)
+    return archive, {**report, "changedPaths": sorted(changed_paths)}
+
+
 def main():
     parser = argparse.ArgumentParser(description="Audit post_tutorial operator outfits")
-    parser.add_argument("action", choices=("audit", "repair"))
+    parser.add_argument(
+        "action", choices=("audit", "repair", "revoke-legacy-outfits")
+    )
     parser.add_argument("--username")
     parser.add_argument("--single-user", action="store_true")
     parser.add_argument("--yes", action="store_true")
@@ -240,6 +360,11 @@ def main():
     save_dir = save_dir_for(args.username, args.single_user)
     if args.action == "audit":
         print(json.dumps(audit_save(save_dir), ensure_ascii=False, indent=2))
+        return
+    if args.action == "revoke-legacy-outfits":
+        archive, report = revoke_legacy_outfits(save_dir, yes=args.yes)
+        print(f"backup: {archive}")
+        print(json.dumps({"changedPaths": report["changedPaths"]}, ensure_ascii=False, indent=2))
         return
     archive, report = repair_save(save_dir, yes=args.yes)
     print(f"backup: {archive}")
