@@ -3,6 +3,7 @@
 from copy import deepcopy
 
 from .player_preset import _normalise_char
+from .operator_skin import equipped_skin_id
 
 
 def build_first_operator_grant(player_data, char_id):
@@ -54,9 +55,7 @@ def build_first_operator_grant(player_data, char_id):
                 "value": building_char,
             }
         )
-    skin_id = char_obj.get("skin")
-    if skin_id is None and char_obj.get("currentTmpl"):
-        skin_id = char_obj["tmpl"][char_obj["currentTmpl"]]["skinId"]
+    skin_id = equipped_skin_id(char_obj)
     if skin_id:
         mutations.extend(
             [

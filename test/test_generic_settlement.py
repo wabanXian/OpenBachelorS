@@ -322,6 +322,21 @@ def test_generated_first_pass_matches_independently_audited_expectations(
     assert actual == expected
 
 
+def test_main_zero_eleven_melantha_reward_uses_builtin_e0_skin():
+    value = player()
+    unlock(value, "main_00-11", [("main_00-10", 2)])
+    start(value, "main_00-11", 100)
+    finish(value, result("main_00-11", 3, 100))
+    melantha = next(
+        char for _, char in value["troop"]["chars"]
+        if char["charId"] == "char_208_melan"
+    )
+    assert melantha["evolvePhase"] == 0
+    assert melantha["skin"] == "char_208_melan#1"
+    assert "char_208_melan#1" in value["skin"]["characterSkins"]
+    assert "char_208_melan@epoque#1" not in value["skin"]["characterSkins"]
+
+
 @pytest.mark.parametrize("stars", [2, 3])
 def test_zero_two_generic_first_clear_and_mission(stars):
     value = player()

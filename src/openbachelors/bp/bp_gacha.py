@@ -22,6 +22,7 @@ from ..util.player_data import (
     sandbox_player_data_template,
 )
 from ..util.player_preset import _normalise_char
+from ..util.operator_skin import equipped_skin_id
 from ..util.tutorial_debug import event, player_snapshot
 from ..util.helper import (
     get_char_num_id,
@@ -134,9 +135,7 @@ def grant_gacha_character(player_data, char_id):
         building_char["index"] = -1
         player_data["building"]["chars"][str(char_inst_id)] = building_char
 
-    skin_id = char_obj.get("skin")
-    if skin_id is None and char_obj.get("currentTmpl"):
-        skin_id = char_obj["tmpl"][char_obj["currentTmpl"]]["skinId"]
+    skin_id = equipped_skin_id(char_obj)
     if skin_id:
         player_data["skin"]["characterSkins"][skin_id] = 1
         player_data["skin"]["skinTs"][skin_id] = int(faketime())

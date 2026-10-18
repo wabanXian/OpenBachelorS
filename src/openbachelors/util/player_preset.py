@@ -4,6 +4,7 @@ from ..const.filepath import GAMEDATA_CONST, TMPL_JSON
 from .const_json_loader import ConstJson, const_json_loader
 from .helper import get_char_num_id
 from .building_state import build_newbie_building
+from .operator_skin import equip_resource_default_skin, equipped_skin_id
 
 
 SANDBOX_PRESET = "sandbox"
@@ -55,7 +56,7 @@ def _normalise_char(char_obj, level=1):
     normalise_loadout(char_obj)
     for loadout in char_obj.get("tmpl", {}).values():
         normalise_loadout(loadout)
-    return char_obj
+    return equip_resource_default_skin(char_obj, evolve_phase=0)
 
 
 def build_post_tutorial_template(sandbox_template, *, newbie_building=True):
@@ -129,9 +130,7 @@ def build_post_tutorial_template(sandbox_template, *, newbie_building=True):
             building_char["index"] = -1
             tmpl["building"]["chars"][char_inst_id] = building_char
 
-        skin_id = char_obj.get("skin")
-        if skin_id is None and char_obj.get("currentTmpl"):
-            skin_id = char_obj["tmpl"][char_obj["currentTmpl"]]["skinId"]
+        skin_id = equipped_skin_id(char_obj)
         if skin_id:
             tmpl["skin"]["characterSkins"][skin_id] = 1
             tmpl["skin"]["skinTs"][skin_id] = 1700000000
