@@ -3,6 +3,7 @@ from copy import deepcopy
 from ..const.filepath import GAMEDATA_CONST, TMPL_JSON
 from .const_json_loader import ConstJson, const_json_loader
 from .helper import get_char_num_id
+from .building_state import build_newbie_building
 
 
 SANDBOX_PRESET = "sandbox"
@@ -57,7 +58,7 @@ def _normalise_char(char_obj, level=1):
     return char_obj
 
 
-def build_post_tutorial_template(sandbox_template):
+def build_post_tutorial_template(sandbox_template, *, newbie_building=True):
     """Build a fresh account while retaining the preset's isolated save space."""
     sandbox = sandbox_template.copy()
     tmpl = const_json_loader[TMPL_JSON].copy()
@@ -138,5 +139,8 @@ def build_post_tutorial_template(sandbox_template):
     tmpl["troop"]["curCharInstId"] = max(
         get_char_num_id(char_id) for char_id in initial_char_ids
     ) + 1
+
+    if newbie_building:
+        tmpl["building"] = build_newbie_building(tmpl["building"])
 
     return ConstJson(tmpl), ConstJson(initial_char_ids)

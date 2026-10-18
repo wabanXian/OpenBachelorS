@@ -1,0 +1,74 @@
+{
+  "bakedAnimDatas": {
+    "Default": {
+      "md5": "8be30899f58952fdb160afbb574de9c4",
+      "skipZeroFrameUpdate": false,
+      "bakedMPDatas": {
+        "Default": {
+          "0": {
+            "bakedStepInterval": 1,
+            "frameCount": 1,
+            "trsData": [
+              6.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.0,
+              -0.2,
+              8.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              6.0,
+              1.0,
+              1.0,
+              1.0,
+              0.27,
+              0.27,
+              0.27
+            ]
+          }
+        },
+        "Start": {
+          "0": {
+            "bakedStepInterval": 1,
+            "frameCount": 1,
+            "trsData": [
+              6.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.0,
+              -0.2,
+              8.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              6.0,
+              1.0,
+              1.0,
+              1.0,
+              0.27,
+              0.27,
+              0.27
+            ]
+          }
+        }
+      },
+      "bakedEvents": {}
+    }
+  },
+  "hash": "c02f39"
+}

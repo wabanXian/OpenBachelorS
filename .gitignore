@@ -187,3 +187,6 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/python
 
 !/main.spec
+
+# Explicit local save migrations create recoverable archives here.
+save_backups/

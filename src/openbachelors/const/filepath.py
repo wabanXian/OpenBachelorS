@@ -73,13 +73,24 @@ RES_LOCK_FILEPATH = "res_lock"
 
 RES_EXCEL_DIRPATH_CN = "res/excel/"
 RES_EXCEL_DIRPATH_EN = "res_en/excel/"
+RES_GAMEDATA_DIRPATH_CN = "res/"
+RES_GAMEDATA_DIRPATH_EN = "res_en/"
 
 
 match GAME_REGION:
     case GameRegion.GAME_REGION_CN:
         RES_EXCEL_DIRPATH = RES_EXCEL_DIRPATH_CN
+        RES_GAMEDATA_DIRPATH = RES_GAMEDATA_DIRPATH_CN
     case GameRegion.GAME_REGION_EN:
         RES_EXCEL_DIRPATH = RES_EXCEL_DIRPATH_EN
+        RES_GAMEDATA_DIRPATH = RES_GAMEDATA_DIRPATH_EN
+
+GAMEDATA_VERSION_MANIFEST = "conf/gamedata_version.json"
+GAMEDATA_DATA_VERSION = RES_EXCEL_DIRPATH + "data_version.txt"
+BUILDING_LOCAL_DATA = RES_GAMEDATA_DIRPATH + "building/building_local_data.json"
+ROOM_OBSTACLE_DATA = RES_GAMEDATA_DIRPATH + "building/room_obstacle_data.json"
+BATTLE_LEVEL_SCRIPT_TABLE = RES_GAMEDATA_DIRPATH + "battle/level_script_table.json"
+LEVELS_META = RES_GAMEDATA_DIRPATH + "levels/levels_meta.json"
 
 
 SKIN_TABLE = RES_EXCEL_DIRPATH + "skin_table.json"

@@ -197,3 +197,46 @@ def reconcile_visible_missions(player_data):
                     changes.append({"kind": "group_completed", "groupId": group_id})
                     made_progress = True
     return changes
+
+
+def update_has_room_missions(player_data):
+    """Refresh already-visible resource-backed ``HasRoom`` mission progress."""
+    reconcile_visible_missions(player_data)
+    resources = const_json_loader[MISSION_TABLE]["missions"]
+    rooms = player_data["building"]["roomSlots"].copy().values()
+    changed = []
+    for mission_type in VISIBLE_TYPES:
+        visible = player_data["mission"]["missions"][mission_type]
+        for mission_id, mission in visible.copy().items():
+            if mission_id not in resources:
+                continue
+            resource = resources[mission_id].copy()
+            if resource.get("template") != "HasRoom" or mission.get("state") == 3:
+                continue
+            params = resource.get("param") or []
+            if len(params) < 4:
+                continue
+            try:
+                target = max(1, int(params[1]))
+                minimum_level = int(params[2])
+            except (TypeError, ValueError):
+                continue
+            room_type = params[3]
+            current = min(
+                target,
+                sum(
+                    1
+                    for room in rooms
+                    if room.get("roomId") == room_type
+                    and int(room.get("level", 0)) >= minimum_level
+                ),
+            )
+            before = mission["progress"][0]["value"]
+            if current == before:
+                continue
+            visible[mission_id] = {
+                "progress": [{"target": target, "value": current}],
+                "state": 2,
+            }
+            changed.append({"missionId": mission_id, "before": before, "after": current})
+    return changed

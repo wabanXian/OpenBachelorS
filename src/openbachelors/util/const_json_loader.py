@@ -5,7 +5,8 @@ from copy import deepcopy
 from abc import ABC, abstractmethod
 from functools import wraps
 
-from ..const.filepath import RES_EXCEL_DIRPATH
+from ..const.filepath import RES_GAMEDATA_DIRPATH
+from .game_data import validate_game_data_version
 
 
 class SavableThing(ABC):
@@ -118,9 +119,12 @@ class LazyLoadedConstJson(ConstJson):
 
 
 class ConstJsonLoader:
-    TARGET_DIR_LST = ["conf", "data", RES_EXCEL_DIRPATH]
+    # RES_GAMEDATA_DIRPATH contains excel plus building/story/levels/
+    # levelscripts/battle. Existing res/excel keys therefore remain identical.
+    TARGET_DIR_LST = ["conf", "data", RES_GAMEDATA_DIRPATH]
 
     def __init__(self):
+        validate_game_data_version()
         self.const_json_dict = {}
         for target_dir in self.TARGET_DIR_LST:
             for root, dirs, files in os.walk(target_dir):

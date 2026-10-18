@@ -2,9 +2,18 @@ from fastapi import APIRouter
 from fastapi import Request
 
 from ..const.json_const import true, false, null
-from ..const.filepath import CONFIG_JSON, VERSION_JSON
+from ..const.filepath import BUILDING_DATA, CONFIG_JSON, VERSION_JSON
 from ..util.const_json_loader import const_json_loader
 from ..util.player_data import player_data_decorator
+from ..util.building_state import (
+    BuildingRuleError,
+    build_or_upgrade_room,
+    clean_room_slot,
+    deliver_trade_order,
+    validate_building_structure,
+)
+from ..util.tutorial_debug import event
+from ..util.mission_lifecycle import update_has_room_missions
 
 router = APIRouter()
 
@@ -13,8 +22,219 @@ router = APIRouter()
 @player_data_decorator
 async def building_sync(player_data, request: Request):
     request_json = await request.json()
-    response = {}
+    labor = player_data["building"]["status"]["labor"]
+    structure_issues = validate_building_structure(player_data)
+    event(
+        request,
+        "building_sync",
+        requestFields=sorted(request_json),
+        roomSlotCount=len(player_data["building"]["roomSlots"]),
+        controlLevel=player_data["building"]["roomSlots"].copy().get("slot_34", {}).get(
+            "level"
+        ),
+        labor={"value": labor.copy().get("value"), "maxValue": labor.copy().get("maxValue")},
+        structureValid=not structure_issues,
+        structureIssues=structure_issues,
+    )
+    response = {"ts": __import__("time").time_ns() // 1_000_000_000}
     return response
+
+
+def _building_error(request, operation, exc, **context):
+    event(
+        request,
+        "building_operation_rejected",
+        operation=operation,
+        reason=str(exc),
+        **context,
+    )
+    return {"result": 1, "buildingError": str(exc)}
+
+
+@router.post("/building/cleanRoomSlot")
+@player_data_decorator
+async def building_cleanRoomSlot(player_data, request: Request):
+    request_json = await request.json()
+    slot_id = request_json.get("roomSlotId")
+    try:
+        result = clean_room_slot(player_data, slot_id)
+    except BuildingRuleError as exc:
+        return _building_error(request, "cleanRoomSlot", exc, roomSlotId=slot_id)
+    event(request, "building_room_cleaned", roomSlotId=slot_id, changes=result)
+    return {}
+
+
+@router.post("/building/buildRoom")
+@player_data_decorator
+async def building_buildRoom(player_data, request: Request):
+    request_json = await request.json()
+    slot_id = request_json.get("roomSlotId")
+    room_type = request_json.get("roomId")
+    try:
+        result = build_or_upgrade_room(player_data, slot_id, room_type, 1)
+    except BuildingRuleError as exc:
+        return _building_error(
+            request, "buildRoom", exc, roomSlotId=slot_id, roomId=room_type
+        )
+    event(
+        request,
+        "building_room_built",
+        roomSlotId=slot_id,
+        roomId=room_type,
+        level=1,
+        costs=result,
+        missionUpdates=update_has_room_missions(player_data),
+    )
+    return {"result": 0}
+
+
+@router.post("/building/upgradeRoom")
+@player_data_decorator
+async def building_upgradeRoom(player_data, request: Request):
+    request_json = await request.json()
+    slot_id = request_json.get("roomSlotId")
+    target_level = request_json.get("targetLevel")
+    slot = player_data["building"]["roomSlots"].copy().get(slot_id, {})
+    room_type = slot.get("roomId")
+    try:
+        result = build_or_upgrade_room(
+            player_data, slot_id, room_type, target_level
+        )
+    except (BuildingRuleError, TypeError, ValueError) as exc:
+        return _building_error(
+            request,
+            "upgradeRoom",
+            exc,
+            roomSlotId=slot_id,
+            roomId=room_type,
+            targetLevel=target_level,
+        )
+    event(
+        request,
+        "building_room_upgraded",
+        roomSlotId=slot_id,
+        roomId=room_type,
+        level=target_level,
+        costs=result,
+        missionUpdates=update_has_room_missions(player_data),
+    )
+    return {"result": 0}
+
+
+@router.post("/building/completeUpgradeRoom")
+@player_data_decorator
+async def building_completeUpgradeRoom(player_data, request: Request):
+    request_json = await request.json()
+    slot_id = request_json.get("roomSlotId")
+    if slot_id not in player_data["building"]["roomSlots"]:
+        slot = None
+    else:
+        slot = player_data["building"]["roomSlots"][slot_id]
+    if slot is None or slot.copy().get("state") != 1:
+        return _building_error(
+            request,
+            "completeUpgradeRoom",
+            BuildingRuleError("room_not_upgrading"),
+            roomSlotId=slot_id,
+        )
+    slot["state"] = 2
+    slot["completeConstructTime"] = -1
+    event(request, "building_room_upgrade_completed", roomSlotId=slot_id)
+    return {"result": 0}
+
+
+@router.post("/building/changeManufactureSolution")
+@player_data_decorator
+async def building_changeManufactureSolution(player_data, request: Request):
+    request_json = await request.json()
+    slot_id = request_json.get("roomSlotId")
+    formula_id = str(request_json.get("targetFormulaId"))
+    solution_count = int(request_json.get("solutionCount", 0))
+    formulas = const_json_loader[BUILDING_DATA]["manufactFormulas"].copy()
+    room = (
+        player_data["building"]["rooms"]["MANUFACTURE"][slot_id]
+        if slot_id in player_data["building"]["rooms"]["MANUFACTURE"]
+        else None
+    )
+    formula = formulas.get(formula_id)
+    if room is None or formula is None or solution_count < 0:
+        return _building_error(
+            request,
+            "changeManufactureSolution",
+            BuildingRuleError("invalid_manufacture_solution"),
+            roomSlotId=slot_id,
+            formulaId=formula_id,
+        )
+    room["state"] = 1
+    room["formulaId"] = formula_id
+    room["remainSolutionCnt"] = solution_count
+    room["outputSolutionCnt"] = 0
+    room["lastUpdateTime"] = __import__("time").time_ns() // 1_000_000_000
+    room["completeWorkTime"] = -1
+    event(
+        request,
+        "building_manufacture_solution_changed",
+        roomSlotId=slot_id,
+        formulaId=formula_id,
+        solutionCount=solution_count,
+    )
+    return {"result": 0}
+
+
+@router.post("/building/changeStrategy")
+@player_data_decorator
+async def building_changeStrategy(player_data, request: Request):
+    request_json = await request.json()
+    slot_id = request_json.get("roomSlotId") or request_json.get("slotId")
+    strategy = request_json.get("strategy") or request_json.get("targetStrategy")
+    room = (
+        player_data["building"]["rooms"]["TRADING"][slot_id]
+        if slot_id in player_data["building"]["rooms"]["TRADING"]
+        else None
+    )
+    if room is None or strategy not in {"O_GOLD", "O_DIAMOND"}:
+        return _building_error(
+            request,
+            "changeStrategy",
+            BuildingRuleError("invalid_trading_strategy"),
+            roomSlotId=slot_id,
+            strategy=strategy,
+        )
+    room["strategy"] = strategy
+    room["lastUpdateTime"] = __import__("time").time_ns() // 1_000_000_000
+    event(
+        request,
+        "building_trading_strategy_changed",
+        roomSlotId=slot_id,
+        strategy=strategy,
+    )
+    return {"result": 0}
+
+
+@router.post("/building/deliveryOrder")
+@player_data_decorator
+async def building_deliveryOrder(player_data, request: Request):
+    request_json = await request.json()
+    slot_id = request_json.get("slotId")
+    order_id = request_json.get("orderId")
+    try:
+        result = deliver_trade_order(player_data, slot_id, order_id)
+    except BuildingRuleError as exc:
+        return _building_error(
+            request,
+            "deliveryOrder",
+            exc,
+            roomSlotId=slot_id,
+            orderId=order_id,
+            requestFields=sorted(request_json),
+        )
+    event(
+        request,
+        "building_trade_order_delivered",
+        requestFields=sorted(request_json),
+        **result,
+    )
+    return {"result": 0}
 
 
 @router.post("/building/getRecentVisitors")
@@ -98,6 +318,27 @@ async def building_assignChar(player_data, request: Request):
 
     room_id = request_json["roomSlotId"]
     char_num_id_lst = request_json["charInstIdList"]
+    if room_id not in player_data["building"]["roomSlots"]:
+        return _building_error(
+            request, "assignChar", BuildingRuleError("unknown_room_slot"), roomSlotId=room_id
+        )
+    slot_snapshot = player_data["building"]["roomSlots"][room_id].copy()
+    expected_slots = len(slot_snapshot.get("charInstIds", []))
+    assigned = [value for value in char_num_id_lst if value != -1]
+    known_chars = player_data["building"]["chars"].copy()
+    if (
+        len(char_num_id_lst) != expected_slots
+        or len(assigned) != len(set(assigned))
+        or any(str(value) not in known_chars for value in assigned)
+    ):
+        return _building_error(
+            request,
+            "assignChar",
+            BuildingRuleError("invalid_room_assignment"),
+            roomSlotId=room_id,
+            requestedCount=len(char_num_id_lst),
+            capacity=expected_slots,
+        )
 
     old_char_num_id_lst = player_data["building"]["roomSlots"][room_id][
         "charInstIds"
@@ -127,6 +368,14 @@ async def building_assignChar(player_data, request: Request):
         player_data["building"]["chars"][str(char_num_id)]["index"] = char_idx
 
     player_data["building"]["roomSlots"][room_id]["charInstIds"] = char_num_id_lst
+
+    event(
+        request,
+        "building_chars_assigned",
+        roomSlotId=room_id,
+        before=old_char_num_id_lst,
+        after=char_num_id_lst,
+    )
 
     response = {}
     return response

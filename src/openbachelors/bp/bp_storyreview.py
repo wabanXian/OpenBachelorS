@@ -6,6 +6,7 @@ from ..const.filepath import CONFIG_JSON, VERSION_JSON, STORY_TABLE
 from ..util.const_json_loader import const_json_loader
 from ..util.player_data import player_data_decorator
 from ..util.tutorial_debug import event, player_snapshot
+from ..util.building_state import ensure_tutorial_first_trade_order
 
 router = APIRouter()
 
@@ -38,6 +39,10 @@ async def story_finishStory(player_data, request: Request):
             player_data["status"]["progress"], set_progress
         )
 
+    trade_tutorial = None
+    if story_id == "obt/guide/l0-11/3c_station_trade" and not already_finished:
+        trade_tutorial = ensure_tutorial_first_trade_order(player_data)
+
     event(
         request,
         "tutorial_story_finished",
@@ -53,6 +58,7 @@ async def story_finishStory(player_data, request: Request):
         after=player_snapshot(player_data),
         completedRewardCount=len(story["completedRewards"]),
         rewardApplication="not_implemented",
+        tradeTutorial=trade_tutorial,
     )
 
     response = {"items": []}

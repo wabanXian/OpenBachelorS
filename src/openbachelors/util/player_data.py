@@ -69,6 +69,12 @@ from .player_preset import (
     build_post_tutorial_template,
     get_player_preset,
 )
+from .building_state import (
+    BUILDING_SCHEMA_VERSION,
+    repair_malformed_cleaned_structural_slots,
+    reconcile_interrupted_clean_tutorial,
+    validate_building_structure,
+)
 from .tutorial_debug import event as tutorial_event, player_snapshot
 from .mission_lifecycle import reconcile_visible_missions
 from .battle_settlement import (
@@ -725,6 +731,9 @@ sandbox_player_data_template, sandbox_char_id_lst = build_player_data_template()
 post_tutorial_player_data_template, post_tutorial_char_id_lst = (
     build_post_tutorial_template(sandbox_player_data_template)
 )
+post_tutorial_legacy_building_template, _ = build_post_tutorial_template(
+    sandbox_player_data_template, newbie_building=False
+)
 player_data_templates = {
     "sandbox": sandbox_player_data_template,
     POST_TUTORIAL_PRESET: post_tutorial_player_data_template,
@@ -1288,6 +1297,14 @@ class PlayerData(OverlayJson, SavableThing):
 
             battle_replay_manager = BattleReplayManager(replay_dirpath)
 
+        existing_post_tutorial_save = preset == POST_TUTORIAL_PRESET and bool(
+            sav_delta_json.modified_dict
+            or sav_delta_json.deleted_dict
+            or sav_pending_delta_json.modified_dict
+            or sav_pending_delta_json.deleted_dict
+            or extra_save.save_obj.get("last_message_ts")
+            or extra_save.save_obj.get("quest_battle_sessions_v1")
+        )
         if preset == POST_TUTORIAL_PRESET:
             stored_preset = extra_save.save_obj.get("player_preset")
             if stored_preset not in (None, preset):
@@ -1296,7 +1313,20 @@ class PlayerData(OverlayJson, SavableThing):
                 )
             extra_save.save_obj["player_preset"] = preset
 
-        json_with_delta = OverlayJson(player_data_templates[preset], sav_delta_json)
+        selected_template = player_data_templates[preset]
+        if (
+            preset == POST_TUTORIAL_PRESET
+            and existing_post_tutorial_save
+            and extra_save.save_obj.get("building_schema_version") is None
+        ):
+            # Changing a shared base template must never silently rewrite an
+            # existing account. Legacy saves retain their previous fully-built
+            # base until the explicit, backed-up migration tool marks them.
+            selected_template = post_tutorial_legacy_building_template
+        elif preset == POST_TUTORIAL_PRESET:
+            extra_save.save_obj["building_schema_version"] = BUILDING_SCHEMA_VERSION
+
+        json_with_delta = OverlayJson(selected_template, sav_delta_json)
         player_data = cls(json_with_delta, sav_pending_delta_json)
 
         player_data.save_aggregator = save_aggregator
@@ -1309,6 +1339,27 @@ class PlayerData(OverlayJson, SavableThing):
         recovery = reconcile_pending_session(player_data)
         schema_repairs = repair_missing_char_equip_fields(player_data)
         if preset == POST_TUTORIAL_PRESET:
+            repaired_room_types = repair_malformed_cleaned_structural_slots(player_data)
+            if repaired_room_types:
+                schema_repairs.append(
+                    {
+                        "reason": "malformed_cleaned_structural_slot_repaired",
+                        "roomSlotIds": repaired_room_types,
+                    }
+                )
+            interrupted_clean = (
+                reconcile_interrupted_clean_tutorial(player_data)
+                if extra_save.save_obj.get("building_schema_version")
+                == BUILDING_SCHEMA_VERSION
+                else None
+            )
+            if interrupted_clean:
+                schema_repairs.append(
+                    {
+                        "reason": "interrupted_building_clean_tutorial_reconciled",
+                        **interrupted_clean,
+                    }
+                )
             mission_changes = reconcile_visible_missions(player_data)
             if mission_changes:
                 schema_repairs.append(
@@ -1325,6 +1376,15 @@ class PlayerData(OverlayJson, SavableThing):
 
         if request is not None:
             snapshot = player_snapshot(player_data)
+            building_issues = validate_building_structure(player_data)
+            tutorial_event(
+                request,
+                "building_structure_validation",
+                valid=not building_issues,
+                issueCount=len(building_issues),
+                issues=building_issues,
+                mutation="none",
+            )
             tutorial_event(
                 request,
                 "player_data_loaded",

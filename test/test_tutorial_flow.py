@@ -8,6 +8,7 @@ from openbachelors.bp.bp_gacha import grant_gacha_character
 from openbachelors.bp.bp_storyreview import story_finishStory
 from openbachelors.util import tutorial_debug
 from openbachelors.util.tutorial_debug import player_snapshot
+from openbachelors.util.building_state import build_or_upgrade_room, clean_room_slot
 from openbachelors.util.player_data import (
     DeltaJson,
     OverlayJson,
@@ -57,11 +58,52 @@ async def test_finishing_tutorial_story_advances_and_persists_progress():
     reloaded = OverlayJson(post_tutorial_player_data_template, delta)
     assert reloaded["status"]["progress"] == 10
     assert reloaded["status"]["flags"][story_id] == 1
-
     await story_finishStory.__wrapped__(
         reloaded, make_request({"storyId": story_id}, path="/story/finishStory")
     )
     assert reloaded["status"]["progress"] == 10
+
+
+@pytest.mark.asyncio
+async def test_finishing_trade_station_story_atomically_creates_tutorial_order():
+    delta = DeltaJson()
+    player = OverlayJson(post_tutorial_player_data_template, delta)
+    player["inventory"]["3131"] = 30
+    for slot_id in ("slot_33", "slot_27", "slot_26", "slot_25", "slot_24"):
+        clean_room_slot(player, slot_id)
+    for slot_id, room_type in (
+        ("slot_26", "POWER"),
+        ("slot_25", "MANUFACTURE"),
+        ("slot_24", "TRADING"),
+    ):
+        build_or_upgrade_room(player, slot_id, room_type, 1)
+    player["building"]["roomSlots"]["slot_24"]["charInstIds"] = [502]
+    player["building"]["chars"]["502"]["roomSlotId"] = "slot_24"
+    player["building"]["chars"]["502"]["index"] = 0
+    player["status"]["progress"] = 1110
+
+    story_id = "obt/guide/l0-11/3c_station_trade"
+    response = await story_finishStory.__wrapped__(
+        player, make_request({"storyId": story_id}, path="/story/finishStory")
+    )
+    assert response == {"items": []}
+    assert player["status"]["progress"] == 1111
+    assert player["status"]["flags"][story_id] == 1
+    stock = player["building"]["rooms"]["TRADING"]["slot_24"]["stock"]
+    assert len(stock) == 1
+
+    reloaded = OverlayJson(post_tutorial_player_data_template, delta)
+    assert reloaded["building"]["rooms"]["TRADING"]["slot_24"]["stock"].copy() == stock.copy()
+    await story_finishStory.__wrapped__(
+        reloaded, make_request({"storyId": story_id}, path="/story/finishStory")
+    )
+    assert reloaded["building"]["rooms"]["TRADING"]["slot_24"]["stock"].copy() == stock.copy()
+    assert reloaded["status"]["flags"][story_id] == 1
+
+    await story_finishStory.__wrapped__(
+        reloaded, make_request({"storyId": story_id}, path="/story/finishStory")
+    )
+    assert reloaded["status"]["progress"] == 1111
 
 
 def test_gacha_character_is_added_once_and_survives_reload():
