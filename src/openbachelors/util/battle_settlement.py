@@ -16,6 +16,7 @@ from .faketime import faketime
 from .favor import build_squad_favor_snapshot, plan_battle_favor
 from .mainline_unlock import unlock_conditions_for
 from .mission_lifecycle import plan_mission_events
+from .campaign_lifecycle import plan_campaign_unlocks
 from .player_progression import plan_player_exp_gain
 from .reward_grant import plan_reward
 from .settlement_rules import get_stage_rule
@@ -500,6 +501,11 @@ def prepare_battle_finish(player_data, decoded, raw_data):
         for unlocked_id in unlocked:
             mutations.append({"path": ["dungeon", "stages", unlocked_id], "value": _stage_record(unlocked_id)})
         response["unlockStages"] = unlocked
+        campaign_mutations, campaign_changes = plan_campaign_unlocks(
+            player_data, future
+        )
+        mutations.extend(campaign_mutations)
+        rewards["campaignChanges"] = campaign_changes
         if stage["stageType"] == "MAIN":
             mutations.append({"path": ["status", "mainStageProgress"], "value": stage_id})
 

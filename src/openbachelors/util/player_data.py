@@ -77,6 +77,7 @@ from .building_state import (
 )
 from .tutorial_debug import event as tutorial_event, player_snapshot
 from .mission_lifecycle import reconcile_visible_missions
+from .campaign_lifecycle import reconcile_campaign_unlocks
 from .battle_settlement import (
     reconcile_pending_session,
 )
@@ -1367,6 +1368,15 @@ class PlayerData(OverlayJson, SavableThing):
                         "reason": "mission_visibility_lifecycle_reconciled",
                         "changeCount": len(mission_changes),
                         "changes": mission_changes,
+                    }
+                )
+            campaign_changes = reconcile_campaign_unlocks(player_data)
+            if campaign_changes:
+                schema_repairs.append(
+                    {
+                        "reason": "campaign_unlock_lifecycle_reconciled",
+                        "changeCount": len(campaign_changes),
+                        "changes": campaign_changes,
                     }
                 )
         # Iterating overlay-only operators creates empty traversal branches;
