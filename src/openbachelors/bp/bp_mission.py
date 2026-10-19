@@ -176,40 +176,51 @@ def _periodic_reward_rows(mission_type, group_id):
     )
 
 
+def _periodic_reward_selection(player_data, reward_id):
+    """Resolve the client's targetRewardsId against the active resource set."""
+    marker = player_data.extra_save.save_obj.get("mission_periods_v1", {})
+    for mission_type, marker_key in (
+        ("DAILY", "dailyRewardGroup"),
+        ("WEEKLY", "weeklyRewardGroup"),
+    ):
+        cumulative = 0
+        for row in _periodic_reward_rows(mission_type, marker.get(marker_key)):
+            cumulative += int(row["periodicalPointCost"])
+            if row["id"] == reward_id:
+                return mission_type, row, cumulative
+    return None
+
+
 @router.post("/mission/exchangeMissionRewards")
 @player_data_decorator
 async def mission_exchangeMissionRewards(player_data, request: Request):
     """Claim one resource-defined daily/weekly milestone reward.
 
     The endpoint name is confirmed by the current client route set.  Accept
-    both ``rewardId`` and the older ``id`` spelling observed in server forks.
+    The current PC request contains only ``targetRewardsId``.  Older spellings
+    remain accepted for compatibility, but the mission type is derived from
+    the active GameData reward groups rather than trusted from the request.
     """
     body = await request.json()
-    mission_type = body.get("type")
-    reward_id = body.get("rewardId") or body.get("id")
-    if mission_type not in {"DAILY", "WEEKLY"} or not isinstance(reward_id, str):
+    reward_id = body.get("targetRewardsId") or body.get("rewardId") or body.get("id")
+    if not isinstance(reward_id, str):
         return {"items": []}
     reconcile_visible_missions(player_data)
-    marker = player_data.extra_save.save_obj.get("mission_periods_v1", {})
-    group_id = marker.get("dailyRewardGroup" if mission_type == "DAILY" else "weeklyRewardGroup")
-    rows = _periodic_reward_rows(mission_type, group_id)
-    cumulative, selected = 0, None
-    for row in rows:
-        cumulative += int(row["periodicalPointCost"])
-        if row["id"] == reward_id:
-            selected = (row, cumulative)
-            break
+    selected = _periodic_reward_selection(player_data, reward_id)
+    if selected is None:
+        return {"items": []}
+    mission_type, reward_row, point_threshold = selected
     reward_state = player_data["mission"]["missionRewards"]["rewards"][mission_type]
     point_field = "dailyPoint" if mission_type == "DAILY" else "weeklyPoint"
     already_claimed = reward_id in reward_state and bool(reward_state[reward_id])
-    if selected is None or already_claimed or player_data["mission"]["missionRewards"][point_field] < selected[1]:
+    if already_claimed or player_data["mission"]["missionRewards"][point_field] < point_threshold:
         return {"items": []}
-    unsupported = [r["type"] for r in selected[0]["rewards"] if reward_target_path(r) is None]
+    unsupported = [r["type"] for r in reward_row["rewards"] if reward_target_path(r) is None]
     if unsupported:
         return {"items": []}
-    items = _grant_mission_rewards(player_data, selected[0]["rewards"])
+    items = _grant_mission_rewards(player_data, reward_row["rewards"])
     reward_state[reward_id] = 1
-    event(request, "periodical_reward_confirmed", missionType=mission_type, rewardId=reward_id, pointThreshold=selected[1], rewards=items)
+    event(request, "periodical_reward_confirmed", missionType=mission_type, rewardId=reward_id, pointThreshold=point_threshold, rewards=items)
     return {"items": items}
 
 

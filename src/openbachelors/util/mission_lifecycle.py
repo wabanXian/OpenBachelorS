@@ -159,6 +159,18 @@ def active_periodic_groups(now=None):
     return {"DAILY": (daily, daily_reward), "WEEKLY": (weekly, weekly_reward)}
 
 
+def _periodic_reward_ids(mission_type, group_id):
+    if group_id is None:
+        return []
+    table = const_json_loader[MISSION_TABLE]
+    rows = (
+        table["periodicalRewards"]
+        if mission_type == "DAILY"
+        else table["weeklyRewards"]
+    )
+    return [row["id"] for _, row in rows if row["groupId"] == group_id]
+
+
 def _state_value(player_data, spec):
     if spec.get("state") == "player_level":
         return 1 if player_data["status"]["level"] >= spec["requiredLevel"] else 0
@@ -204,7 +216,9 @@ def _persisted_event_value(player_data, spec):
 
 
 def _record(target, value=0):
-    # Current PC syncData evidence uses state=2 for visible incomplete rows.
+    # The current PC list only renders states 2 and 3.  State 2 remains visible
+    # while progress distinguishes unfinished from claimable; state 3 is the
+    # post-claim presentation.
     return {"progress": [{"target": target, "value": min(target, value)}], "state": 2}
 
 
@@ -232,6 +246,25 @@ def refresh_periodic_missions(player_data, now=None):
         mission["missionRewards"]["weeklyPoint"] = 0
         mission["missionRewards"]["rewards"]["WEEKLY"] = {}
         changes.append({"kind": "weekly_reset", "period": week})
+    # The PC reward-list parser enumerates this dictionary.  An empty mapping
+    # produces an empty milestone list and leaves its allClear accumulator true,
+    # which displays the full-page "reward already received" stamp.  Resource
+    # rows therefore need explicit 0 (unclaimed) states from the start.
+    for mission_type, reward_group in (
+        ("DAILY", active["DAILY"][1]),
+        ("WEEKLY", active["WEEKLY"][1]),
+    ):
+        reward_states = mission["missionRewards"]["rewards"][mission_type]
+        for reward_id in _periodic_reward_ids(mission_type, reward_group):
+            if reward_id not in reward_states:
+                reward_states[reward_id] = 0
+                changes.append(
+                    {
+                        "kind": "periodic_reward_state_initialized",
+                        "type": mission_type,
+                        "rewardId": reward_id,
+                    }
+                )
     new_marker = {"daily": day, "weekly": week, "dailyGroup": active["DAILY"][0], "weeklyGroup": active["WEEKLY"][0], "dailyRewardGroup": active["DAILY"][1], "weeklyRewardGroup": active["WEEKLY"][1]}
     if extra is not None:
         extra.save_obj["mission_periods_v1"] = new_marker
@@ -285,7 +318,9 @@ def reconcile_visible_missions(player_data, now=None):
                     record = missions[mission_id].copy()
                     record["state"] = 2
                     missions[mission_id] = record
-                    changes.append({"kind": "mission_progress_reconciled", "missionId": mission_id})
+                    changes.append(
+                        {"kind": "mission_progress_reconciled", "missionId": mission_id}
+                    )
                 elif missions[mission_id]["state"] != 3 and current is not None:
                     record = missions[mission_id].copy()
                     rows = record["progress"].copy()
@@ -296,10 +331,6 @@ def reconcile_visible_missions(player_data, now=None):
                         record["state"] = 2
                         missions[mission_id] = record
                         changes.append({"kind": "mission_state_reconciled", "missionId": mission_id})
-                    elif record["state"] == 1:
-                        record["state"] = 2
-                        missions[mission_id] = record
-                        changes.append({"kind": "mission_state_visible", "missionId": mission_id})
             if mtype in {"MAIN", "SUB"} and _group_complete(player_data, group, resources) and group_states[group_id] != 1:
                 group_states[group_id] = 1
                 changes.append({"kind": "group_completed", "groupId": group_id})

@@ -162,8 +162,7 @@ async def test_auto_confirm_skips_claimed_and_incomplete_missions():
     assert inventory_count(value, "2001") == records_before
     assert value["status"]["gold"] == gold_before + 1000
     assert value["mission"]["missions"]["MAIN"]["main_1"]["state"] == 3
-    # Legacy hidden state 1 is normalized to the client-visible state 2;
-    # incomplete progress still prevents claiming it.
+    # Current PC rendering uses state 2 for both incomplete and claimable rows.
     assert value["mission"]["missions"]["MAIN"]["main_3"]["state"] == 2
 
 
