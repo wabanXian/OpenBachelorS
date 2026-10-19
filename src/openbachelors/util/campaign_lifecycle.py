@@ -25,6 +25,9 @@ def current_campaign_open_state(now=None):
     training_all = _active_row(table["campaignTrainingAllOpenTimes"], ts)
     return {
         "activeGroupId": permanent["groupId"] if permanent is not None else None,
+        "permanent": (
+            permanent["activeCamps"].copy() if permanent is not None else []
+        ),
         "rotate": rotate["stageId"] if rotate is not None else None,
         "rotateGroup": rotate["groupId"] if rotate is not None else None,
         "training": training["stages"].copy() if training is not None else [],
@@ -75,7 +78,15 @@ def plan_campaign_unlocks(player_data, future_stage_states=None):
     instances = player_data["campaignsV2"]["instances"]
     mutations, changes = [], []
     eligible = eligible_permanent_campaigns(player_data, future_stage_states)
-    for stage_id in eligible:
+    state = current_campaign_open_state() if eligible else None
+
+    # ``open.permanent`` describes the complete resource-scheduled campaign
+    # group.  Individual player access is still controlled by the stage table
+    # and dungeon.stages.  Sending only the one currently accessible stage
+    # leaves activeGroupId pointing at an incomplete group, so the client does
+    # not construct the annihilation layout used by the 1-5 tutorial.
+    scheduled = state["permanent"] if state is not None else []
+    for stage_id in scheduled:
         if stage_id not in opened:
             opened.add(stage_id)
             changes.append({"stageId": stage_id, "kind": "permanent_opened"})
@@ -87,6 +98,23 @@ def plan_campaign_unlocks(player_data, future_stage_states=None):
                 }
             )
             changes.append({"stageId": stage_id, "kind": "instance_initialized"})
+    # The current PC client builds the annihilation card on the common
+    # "campaign" tab from the rotating stage, even before that stage itself is
+    # unlocked. StageZoneCampaignViewModel.LoadData returns isValid=false when
+    # open.rotate has no matching PlayerCampaign.instances entry. Keep this
+    # zero-progress instance separate from dungeon.stages: it makes the card
+    # structurally valid without unlocking or completing the rotating stage.
+    rotate_stage_id = state["rotate"] if state is not None else None
+    if rotate_stage_id is not None and rotate_stage_id not in instances:
+        mutations.append(
+            {
+                "path": ["campaignsV2", "instances", rotate_stage_id],
+                "value": initial_campaign_instance(rotate_stage_id),
+            }
+        )
+        changes.append(
+            {"stageId": rotate_stage_id, "kind": "rotate_instance_initialized"}
+        )
     if changes:
         mutations.insert(
             0,
@@ -95,8 +123,7 @@ def plan_campaign_unlocks(player_data, future_stage_states=None):
                 "value": sorted(opened),
             },
         )
-    if eligible:
-        state = current_campaign_open_state()
+    if state is not None:
         campaign = player_data["campaignsV2"]
         active_present = "activeGroupId" in campaign
         current_active = campaign["activeGroupId"] if active_present else None

@@ -13,6 +13,7 @@ from openbachelors.util.battle_settlement import (
 )
 from openbachelors.util.campaign_lifecycle import (
     current_campaign_open_state,
+    initial_campaign_instance,
     reconcile_campaign_unlocks,
 )
 from openbachelors.util.player_data import (
@@ -53,12 +54,20 @@ def test_one_five_pass_opens_fresh_campaign_instance_idempotently():
     assert {"permanent_opened", "instance_initialized"} <= {
         row["kind"] for row in changes
     }
-    assert value["campaignsV2"]["open"]["permanent"].copy() == ["camp_01"]
-    assert value["campaignsV2"]["instances"]["camp_01"].copy() == {
-        "maxKills": 0,
-        "rewardStatus": [0] * 8,
-    }
     expected = current_campaign_open_state()
+    assert value["campaignsV2"]["open"]["permanent"].copy() == expected["permanent"]
+    for stage_id in expected["permanent"]:
+        assert value["campaignsV2"]["instances"][stage_id].copy() == {
+            "maxKills": 0,
+            "rewardStatus": [0] * 8,
+        }
+    rotate_stage_id = expected["rotate"]
+    assert value["campaignsV2"]["instances"][rotate_stage_id].copy() == (
+        initial_campaign_instance(rotate_stage_id)
+    )
+    assert rotate_stage_id not in value["dungeon"]["stages"]
+    assert "camp_02" not in value["dungeon"]["stages"]
+    assert "camp_03" not in value["dungeon"]["stages"]
     assert value["campaignsV2"]["activeGroupId"] == expected["activeGroupId"]
     assert value["campaignsV2"]["open"]["rotateGroup"] == expected["rotateGroup"]
     assert value["campaignsV2"]["open"]["trainingGroup"] == expected["trainingGroup"]
@@ -110,6 +119,8 @@ def test_one_five_settlement_journals_campaign_unlock():
     }
     commit_battle_finish(value, settlement["session"])
     assert value["campaignsV2"]["instances"]["camp_01"]["maxKills"] == 0
+    assert value["campaignsV2"]["instances"]["camp_02"]["maxKills"] == 0
+    assert "camp_02" not in value["dungeon"]["stages"]
     assert "camp_01" in settlement["response"]["unlockStages"]
 
 
@@ -122,11 +133,19 @@ async def test_old_save_is_repaired_on_login_and_survives_reload(tmp_path, monke
     await initial.save()
 
     repaired = await PlayerData.create(player_id="campaign-old", preset="post_tutorial")
-    assert repaired["campaignsV2"]["open"]["permanent"].copy() == ["camp_01"]
-    assert repaired["campaignsV2"]["instances"]["camp_01"].copy() == {
-        "maxKills": 0,
-        "rewardStatus": [0] * 8,
-    }
+    expected = current_campaign_open_state()
+    assert repaired["campaignsV2"]["open"]["permanent"].copy() == expected["permanent"]
+    for stage_id in expected["permanent"]:
+        assert repaired["campaignsV2"]["instances"][stage_id].copy() == {
+            "maxKills": 0,
+            "rewardStatus": [0] * 8,
+        }
+    rotate_stage_id = expected["rotate"]
+    assert repaired["campaignsV2"]["instances"][rotate_stage_id].copy() == (
+        initial_campaign_instance(rotate_stage_id)
+    )
+    assert rotate_stage_id not in repaired["dungeon"]["stages"]
+    assert "camp_02" not in repaired["dungeon"]["stages"]
     await repaired.save()
 
     reloaded = await PlayerData.create(player_id="campaign-old", preset="post_tutorial")
