@@ -11,7 +11,10 @@ from openbachelors.util.battle_settlement import (
     prepare_battle_finish,
     prepare_battle_start,
 )
-from openbachelors.util.campaign_lifecycle import reconcile_campaign_unlocks
+from openbachelors.util.campaign_lifecycle import (
+    current_campaign_open_state,
+    reconcile_campaign_unlocks,
+)
 from openbachelors.util.player_data import (
     DeltaJson,
     OverlayJson,
@@ -47,15 +50,22 @@ def test_one_five_pass_opens_fresh_campaign_instance_idempotently():
 
     changes = reconcile_campaign_unlocks(value)
 
-    assert {row["kind"] for row in changes} == {
-        "permanent_opened",
-        "instance_initialized",
+    assert {"permanent_opened", "instance_initialized"} <= {
+        row["kind"] for row in changes
     }
     assert value["campaignsV2"]["open"]["permanent"].copy() == ["camp_01"]
     assert value["campaignsV2"]["instances"]["camp_01"].copy() == {
         "maxKills": 0,
         "rewardStatus": [0] * 8,
     }
+    expected = current_campaign_open_state()
+    assert value["campaignsV2"]["activeGroupId"] == expected["activeGroupId"]
+    assert value["campaignsV2"]["open"]["rotateGroup"] == expected["rotateGroup"]
+    assert value["campaignsV2"]["open"]["trainingGroup"] == expected["trainingGroup"]
+    assert (
+        value["campaignsV2"]["open"]["trainingAllOpenGroup"]
+        == expected["trainingAllOpenGroup"]
+    )
     assert value["dungeon"]["stages"]["main_01-05"]["state"] == 2
     assert reconcile_campaign_unlocks(value) == []
 
@@ -92,10 +102,12 @@ def test_one_five_settlement_journals_campaign_unlock():
     )
 
     assert settlement["kind"] == "prepared"
-    assert settlement["session"]["rewards"]["campaignChanges"] == [
-        {"stageId": "camp_01", "kind": "permanent_opened"},
-        {"stageId": "camp_01", "kind": "instance_initialized"},
-    ]
+    assert {row["kind"] for row in settlement["session"]["rewards"]["campaignChanges"]} >= {
+        "permanent_opened",
+        "instance_initialized",
+        "active_group_synchronized",
+        "open_field_synchronized",
+    }
     commit_battle_finish(value, settlement["session"])
     assert value["campaignsV2"]["instances"]["camp_01"]["maxKills"] == 0
     assert "camp_01" in settlement["response"]["unlockStages"]

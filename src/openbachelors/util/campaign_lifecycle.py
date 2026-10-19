@@ -2,9 +2,37 @@
 
 from ..const.filepath import CAMPAIGN_TABLE, STAGE_TABLE
 from .const_json_loader import const_json_loader
+from .faketime import faketime
 
 
 PASS_STATE = 2
+
+
+def _active_row(rows, now):
+    return next(
+        (row for _, row in rows if row["startTs"] <= now <= row["endTs"]),
+        None,
+    )
+
+
+def current_campaign_open_state(now=None):
+    """Build both current-client fields and legacy aliases from GameData."""
+    table = const_json_loader[CAMPAIGN_TABLE]
+    ts = int(faketime() if now is None else now)
+    permanent = _active_row(table["campaignGroups"], ts)
+    rotate = _active_row(table["campaignRotateStageOpenTimes"], ts)
+    training = _active_row(table["campaignTrainingStageOpenTimes"], ts)
+    training_all = _active_row(table["campaignTrainingAllOpenTimes"], ts)
+    return {
+        "activeGroupId": permanent["groupId"] if permanent is not None else None,
+        "rotate": rotate["stageId"] if rotate is not None else None,
+        "rotateGroup": rotate["groupId"] if rotate is not None else None,
+        "training": training["stages"].copy() if training is not None else [],
+        "trainingGroup": training["groupId"] if training is not None else None,
+        "trainingAllOpenGroup": (
+            training_all["groupId"] if training_all is not None else None
+        ),
+    }
 
 
 def initial_campaign_instance(stage_id):
@@ -46,7 +74,8 @@ def plan_campaign_unlocks(player_data, future_stage_states=None):
     opened = set(player_data["campaignsV2"]["open"]["permanent"].copy())
     instances = player_data["campaignsV2"]["instances"]
     mutations, changes = [], []
-    for stage_id in eligible_permanent_campaigns(player_data, future_stage_states):
+    eligible = eligible_permanent_campaigns(player_data, future_stage_states)
+    for stage_id in eligible:
         if stage_id not in opened:
             opened.add(stage_id)
             changes.append({"stageId": stage_id, "kind": "permanent_opened"})
@@ -66,6 +95,48 @@ def plan_campaign_unlocks(player_data, future_stage_states=None):
                 "value": sorted(opened),
             },
         )
+    if eligible:
+        state = current_campaign_open_state()
+        campaign = player_data["campaignsV2"]
+        active_present = "activeGroupId" in campaign
+        current_active = campaign["activeGroupId"] if active_present else None
+        if not active_present or current_active != state["activeGroupId"]:
+            mutations.append(
+                {
+                    "path": ["campaignsV2", "activeGroupId"],
+                    "value": state["activeGroupId"],
+                }
+            )
+            changes.append(
+                {
+                    "kind": "active_group_synchronized",
+                    "groupId": state["activeGroupId"],
+                }
+            )
+        open_state = campaign["open"]
+        aliases = {
+            "rotate": state["rotate"],
+            "rotateGroup": state["rotateGroup"],
+            "rGroup": state["rotateGroup"],
+            "training": state["training"],
+            "trainingGroup": state["trainingGroup"],
+            "tGroup": state["trainingGroup"],
+            "trainingAllOpenGroup": state["trainingAllOpenGroup"],
+            "tAllOpen": state["trainingAllOpenGroup"],
+        }
+        for field, value in aliases.items():
+            present = field in open_state
+            current = (
+                open_state[field].copy()
+                if present and field == "training"
+                else (open_state[field] if present else None)
+            )
+            if present and current == value:
+                continue
+            mutations.append(
+                {"path": ["campaignsV2", "open", field], "value": value}
+            )
+            changes.append({"kind": "open_field_synchronized", "field": field})
     return mutations, changes
 
 
