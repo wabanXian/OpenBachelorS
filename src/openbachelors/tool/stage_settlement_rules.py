@@ -53,7 +53,9 @@ def generate():
             **rules["report"],
         },
     )
-    training = build_training_settlement_rules(stage_table, mission_table)
+    training = build_training_settlement_rules(
+        stage_table, mission_table, _load(STAGE_SETTLEMENT_RULES)
+    )
     _write(GENERATED_TRAINING_SETTLEMENT_RULES, training)
     _write(
         TRAINING_SETTLEMENT_COVERAGE_REPORT,

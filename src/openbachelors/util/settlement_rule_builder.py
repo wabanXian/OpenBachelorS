@@ -277,14 +277,15 @@ def build_settlement_rules(stage_table, mission_table, drop_dataset, manual_rule
     }
 
 
-def build_training_settlement_rules(stage_table, mission_table):
-    """Generate only normal numbered TR stages in main zones.
+def build_training_settlement_rules(stage_table, mission_table, manual_rules=None):
+    """Generate mainline fixed-squad stages and normal numbered TR stages.
 
     CHAR ONCE+ALWAYS is interpreted as one acquisition. That protocol shape is
     established by real-client TR-1/TR-2 samples; other reward quantities are
     never inferred from display rows.
     """
     stages = stage_table["stages"]
+    manual_stage_rules = (manual_rules or {}).get("stages", {})
     missions_by_stage = _mission_rules_by_stage(mission_table, set(stages))
     normal_ids = sorted(
         stage_id
@@ -293,6 +294,18 @@ def build_training_settlement_rules(stage_table, mission_table):
         and str(stage.get("zoneId", "")).startswith("main_")
         and stage.get("isPredefined") is True
     )
+    predefined_main_ids = sorted(
+        stage_id
+        for stage_id, stage in stages.items()
+        if stage_id not in normal_ids
+        and str(stage.get("zoneId", "")).startswith("main_")
+        and stage.get("stageType") == "MAIN"
+        and stage.get("difficulty") == "NORMAL"
+        and stage.get("isPredefined") is True
+        and stage.get("isStoryOnly") is not True
+        and "#" not in stage_id
+    )
+    supported_ids = normal_ids + predefined_main_ids
     special_main = sorted(
         stage_id
         for stage_id, stage in stages.items()
@@ -318,17 +331,26 @@ def build_training_settlement_rules(stage_table, mission_table):
 
     generated = {}
     unsupported = {}
-    for stage_id in normal_ids:
+    for stage_id in supported_ids:
         stage = stages[stage_id]
         display = (
             (stage.get("stageDropInfo") or {}).get("displayDetailRewards") or []
         )
         first_pass = []
         unresolved = []
+        manual_first = deepcopy(
+            (manual_stage_rules.get(stage_id) or {}).get("firstPass") or []
+        )
+        manual_by_key = {
+            (reward["type"], reward["id"]): reward for reward in manual_first
+        }
         for reward in display:
             if reward.get("dropType") != "ONCE":
                 continue
-            if reward.get("type") == "CHAR" and reward.get("occPercent") == "ALWAYS":
+            key = (reward.get("type"), reward.get("id"))
+            if key in manual_by_key:
+                first_pass.append(deepcopy(manual_by_key[key]))
+            elif reward.get("type") == "CHAR" and reward.get("occPercent") == "ALWAYS":
                 first_pass.append(
                     {
                         "type": "CHAR",
@@ -363,7 +385,13 @@ def build_training_settlement_rules(stage_table, mission_table):
             "zoneId": stage["zoneId"],
             "difficulty": stage["difficulty"],
             "settlementEnabled": enabled,
-            "ruleCompleteness": "generated_training" if enabled else "partial",
+            "ruleCompleteness": (
+                "generated_training"
+                if stage_id in normal_ids and enabled
+                else "generated_fixed_squad"
+                if enabled
+                else "partial"
+            ),
             "apCost": stage["apCost"],
             "apFailReturn": stage["apFailReturn"],
             "expGain": stage["expGain"],
@@ -378,21 +406,25 @@ def build_training_settlement_rules(stage_table, mission_table):
             ),
             "sources": {
                 "deterministic": "res/excel/stage_table.json and mission_table.json",
-                "protocolBaseline": "real-client TR-1/TR-2",
+                "protocolBaseline": (
+                    "real-client TR-1/TR-2"
+                    if stage_id in normal_ids
+                    else "real-client main_01-02 fixed-squad battleStart plus common quest battleFinish"
+                ),
                 "random": None,
             },
         }
 
     task_map = {
         stage_id: deepcopy(generated[stage_id]["missions"])
-        for stage_id in normal_ids
+        for stage_id in supported_ids
     }
     reward_map = {
         stage_id: generated[stage_id]["firstPassRewards"]
-        for stage_id in normal_ids
+        for stage_id in supported_ids
     }
     stage_coverage = {}
-    for stage_id in normal_ids:
+    for stage_id in supported_ids:
         stage_coverage[stage_id] = {
             "status": (
                 "supported"
@@ -420,7 +452,7 @@ def build_training_settlement_rules(stage_table, mission_table):
         "schemaVersion": 1,
         "runtimeStatus": "mainline_training_settlement_rules",
         "selection": {
-            "stageIdPattern": "^tr_[0-9]+$",
+            "stageIdPattern": "^tr_[0-9]+$ or predefined MAIN/NORMAL",
             "zonePrefix": "main_",
             "requirePredefined": True,
         },
@@ -429,6 +461,7 @@ def build_training_settlement_rules(stage_table, mission_table):
             "mainlineTrainingCount": len(normal_ids),
             "supportedCount": sum(item["settlementEnabled"] for item in generated.values()),
             "ids": normal_ids,
+            "predefinedMainIds": predefined_main_ids,
             "unsupported": unsupported,
             "specialMainTrainingExcluded": special_main,
             "activityNumberedTrainingExcluded": activity_numbered,

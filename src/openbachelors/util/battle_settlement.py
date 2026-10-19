@@ -14,6 +14,8 @@ from ..const.filepath import STAGE_TABLE
 from .const_json_loader import const_json_loader
 from .faketime import faketime
 from .favor import build_squad_favor_snapshot, plan_battle_favor
+from .mainline_unlock import unlock_conditions_for
+from .mission_lifecycle import plan_mission_events
 from .player_progression import plan_player_exp_gain
 from .reward_grant import plan_reward
 from .settlement_rules import get_stage_rule
@@ -254,6 +256,8 @@ def prepare_battle_start(player_data, request_json):
         "ruleSource": rule_source,
         "ruleCompleteness": rule["ruleCompleteness"],
         "squadSnapshot": squad_snapshot,
+        "assistFriend": request_json.get("assistFriend"),
+        "isReplay": int(request_json.get("isReplay", 0) or 0),
         "mutations": mutations,
     }
     store["active"] = session
@@ -304,7 +308,7 @@ def _newly_unlocked(player_data, future_stage_states):
     for candidate_id, candidate in stage_table:
         if candidate_id in player_data["dungeon"]["stages"]:
             continue
-        conditions = candidate["unlockCondition"].copy()
+        conditions = unlock_conditions_for(candidate_id, candidate)
         if not conditions:
             continue
         ok = True
@@ -499,37 +503,26 @@ def prepare_battle_finish(player_data, decoded, raw_data):
         if stage["stageType"] == "MAIN":
             mutations.append({"path": ["status", "mainStageProgress"], "value": stage_id})
 
-        for mission in rule["missions"]:
-            mission_id = mission["id"]
-            mission_type = mission["type"]
-            if mission_type not in {"MAIN", "SUB"}:
-                continue
-            category_missions = player_data["mission"]["missions"][mission_type]
-            if mission_id in category_missions and category_missions[mission_id]["state"] == 3:
-                continue
-            record_value = {
-                "progress": [
-                    {"target": mission["target"], "value": mission["target"]}
-                ],
-                "state": 2,
-            }
-            if (
-                mission_id in category_missions
-                and category_missions[mission_id].copy() == record_value
-            ):
-                continue
-            mutations.extend(
-                [
+    if outcome == "success":
+        mission_mutations, mission_changes = plan_mission_events(
+            player_data,
+            [
+                (
+                    "battle_success",
                     {
-                        "path": ["mission", "missions", mission_type, mission_id],
-                        "value": record_value,
+                        "stageId": session["stageId"],
+                        "stars": stars,
+                        "killCnt": evidence.get("killCnt", 0),
+                        "usedAssist": bool(session.get("assistFriend")),
+                        "isReplay": bool(session.get("isReplay")),
                     },
-                    {
-                        "path": ["mission", "missionGroups", mission["missionGroup"]],
-                        "value": 0,
-                    },
-                ]
-            )
+                ),
+                ("battle_result", {"killCnt": evidence.get("killCnt", 0)}),
+            ],
+            event_id=session["sessionId"],
+        )
+        mutations.extend(mission_mutations)
+        rewards["missionChanges"] = mission_changes
 
     session.update(
         {

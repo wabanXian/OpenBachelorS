@@ -258,10 +258,65 @@ def test_special_and_activity_training_are_explicitly_outside_mainline_generator
 def test_training_scan_report_matches_current_resource_families():
     report = const_json_loader[GENERATED_TRAINING_SETTLEMENT_RULES]["report"]
     assert report["mainlineTrainingCount"] == 25
-    assert report["supportedCount"] == 25
+    assert report["supportedCount"] == 34
     assert report["ids"].copy() == [f"tr_{index:02d}" for index in range(1, 26)]
     assert report["unsupported"].copy() == {}
+    assert report["predefinedMainIds"].copy() == [
+        "main_01-02",
+        "main_01-11",
+        "main_06-06",
+        "main_06-15",
+        "main_08-15",
+        "main_11-15",
+        "main_11-17",
+        "main_14-09",
+        "main_14-20",
+    ]
     assert report["specialMainTrainingExcluded"].copy() == ["tr_s_1", "tr_s_2"]
     assert report["activityNumberedTrainingExcluded"].copy() == [
         "tr_26", "tr_27", "tr_28"
     ]
+
+
+def test_one_two_fixed_squad_rule_grants_gold_bar_prime_mission_and_unlock_once():
+    value = player()
+    rule = unlock_training(value, "main_01-02")
+    gold_bar_before = (
+        value["inventory"]["3003"] if "3003" in value["inventory"] else 0
+    )
+    start(value, "main_01-02", 100)
+    first = finish(value, result("main_01-02", 3, 100))
+
+    assert rule["apCost"] == 0
+    assert value["inventory"]["3003"] == gold_bar_before + 1
+    assert value["status"]["androidDiamond"] == 1
+    assert value["mission"]["missions"]["MAIN"]["main_16"]["state"] == 2
+    assert {item["id"] for item in first["response"]["firstRewards"]} == {
+        "3003",
+        "4002",
+    }
+    assert "main_01-03" in first["response"]["unlockStages"]
+
+    duplicate = prepare_battle_finish(
+        value, deepcopy(result("main_01-02", 3, 100)), "retry"
+    )
+    assert duplicate["kind"] == "duplicate"
+    assert value["inventory"]["3003"] == gold_bar_before + 1
+    assert value["status"]["androidDiamond"] == 1
+
+
+def test_one_two_cannot_start_before_one_one_passes():
+    value = player()
+    value["dungeon"]["stages"]["main_01-02"] = _stage_record("main_01-02")
+    session, reason = prepare_battle_start(
+        value,
+        {
+            "stageId": "main_01-02",
+            "startTs": 100,
+            "battleType": 0,
+            "usePracticeTicket": 0,
+            "squad": None,
+        },
+    )
+    assert session is None
+    assert reason == "stage_unlock_condition_not_met"

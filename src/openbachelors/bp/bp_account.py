@@ -22,7 +22,7 @@ router = APIRouter()
 
 def mission_state_counts(player_data):
     result = {}
-    for mission_type in ("MAIN", "SUB", "GUIDE"):
+    for mission_type in ("MAIN", "SUB", "GUIDE", "DAILY", "WEEKLY"):
         missions = player_data["mission"]["missions"][mission_type]
         counts = Counter(mission["state"] for _, mission in missions)
         result[mission_type] = {

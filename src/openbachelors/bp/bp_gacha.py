@@ -30,6 +30,7 @@ from ..util.helper import (
     get_char_str_tag_lst,
 )
 from ..util.faketime import faketime
+from ..util.mission_lifecycle import apply_mission_event
 
 logger = logging.getLogger(__name__)
 
@@ -263,10 +264,14 @@ class NormalGachaBasicManager:
         ] = -1
 
     def gacha_finishNormalGacha(self):
+        slot = self.player_data["recruit"]["normal"]["slots"][str(self.slot_id)]
+        if slot["state"] not in {2, 3}:
+            self.response.update({"result": 1})
+            return
         char_id = self.get_gacha_result()
         self.clear_gacha_result()
 
-        gacha_char_obj = get_gacha_char_obj(char_id)
+        gacha_char_obj = grant_gacha_character(self.player_data, char_id)
 
         self.reset_slot()
 
@@ -394,6 +399,12 @@ async def gacha_finishNormalGacha(player_data, request: Request):
 
     normal_gacha_manager = get_normal_gacha_manager(player_data, request_json, response)
     normal_gacha_manager.gacha_finishNormalGacha()
+    if response.get("result") == 0:
+        apply_mission_event(
+            player_data,
+            "normal_gacha",
+            {"count": 1},
+        )
 
     return response
 

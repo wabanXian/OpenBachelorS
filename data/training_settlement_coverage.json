@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "selection": {
-    "stageIdPattern": "^tr_[0-9]+$",
+    "stageIdPattern": "^tr_[0-9]+$ or predefined MAIN/NORMAL",
     "zonePrefix": "main_",
     "requirePredefined": true
   },
   "mainlineTrainingCount": 25,
-  "supportedCount": 25,
+  "supportedCount": 34,
   "ids": [
     "tr_01",
     "tr_02",
@@ -33,6 +33,17 @@
     "tr_23",
     "tr_24",
     "tr_25"
+  ],
+  "predefinedMainIds": [
+    "main_01-02",
+    "main_01-11",
+    "main_06-06",
+    "main_06-15",
+    "main_08-15",
+    "main_11-15",
+    "main_11-17",
+    "main_14-09",
+    "main_14-20"
   ],
   "unsupported": {},
   "specialMainTrainingExcluded": [
@@ -335,7 +346,48 @@
     "tr_22": [],
     "tr_23": [],
     "tr_24": [],
-    "tr_25": []
+    "tr_25": [],
+    "main_01-02": [
+      {
+        "id": "main_16",
+        "type": "MAIN",
+        "template": "CompleteMainStage",
+        "missionGroup": "main_16",
+        "preMissionIds": [],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "GOLD",
+            "id": "4001",
+            "count": 2000
+          }
+        ]
+      }
+    ],
+    "main_01-11": [
+      {
+        "id": "main_26",
+        "type": "MAIN",
+        "template": "CompleteMainStage",
+        "missionGroup": "main_26",
+        "preMissionIds": [],
+        "target": 1,
+        "rewards": [
+          {
+            "type": "CARD_EXP",
+            "id": "2002",
+            "count": 5
+          }
+        ]
+      }
+    ],
+    "main_06-06": [],
+    "main_06-15": [],
+    "main_08-15": [],
+    "main_11-15": [],
+    "main_11-17": [],
+    "main_14-09": [],
+    "main_14-20": []
   },
   "firstPassRewardMap": {
     "tr_01": [
@@ -425,7 +477,34 @@
     "tr_22": [],
     "tr_23": [],
     "tr_24": [],
-    "tr_25": []
+    "tr_25": [],
+    "main_01-02": [
+      {
+        "type": "MATERIAL",
+        "id": "3003",
+        "count": 1,
+        "trigger": "first_pass",
+        "localEvidence": "stage_table displayDetailRewards ONCE+ALWAYS Pure Gold; zero-AP predefined fixed-squad mainline stage",
+        "sourceUrl": "https://terra-archive.net/en/stages/main_01-02",
+        "secondarySourceUrl": "https://wiki.biligame.com/arknights/1-2",
+        "verificationStatus": "cross_checked_single_item"
+      }
+    ],
+    "main_01-11": [],
+    "main_06-06": [],
+    "main_06-15": [
+      {
+        "type": "CHAR",
+        "id": "char_002_amiya",
+        "count": 1,
+        "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+      }
+    ],
+    "main_08-15": [],
+    "main_11-15": [],
+    "main_11-17": [],
+    "main_14-09": [],
+    "main_14-20": []
   },
   "stageCoverage": {
     "tr_01": {
@@ -1234,6 +1313,236 @@
         "easy_14-02",
         "main_14-02",
         "tough_14-02"
+      ]
+    },
+    "main_01-02": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [
+        {
+          "type": "MATERIAL",
+          "id": "3003",
+          "count": 1,
+          "trigger": "first_pass",
+          "localEvidence": "stage_table displayDetailRewards ONCE+ALWAYS Pure Gold; zero-AP predefined fixed-squad mainline stage",
+          "sourceUrl": "https://terra-archive.net/en/stages/main_01-02",
+          "secondarySourceUrl": "https://wiki.biligame.com/arknights/1-2",
+          "verificationStatus": "cross_checked_single_item"
+        }
+      ],
+      "missions": [
+        {
+          "id": "main_16",
+          "type": "MAIN",
+          "template": "CompleteMainStage",
+          "missionGroup": "main_16",
+          "preMissionIds": [],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "GOLD",
+              "id": "4001",
+              "count": 2000
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_01-01",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_01-03"
+      ]
+    },
+    "main_01-11": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [
+        {
+          "id": "main_26",
+          "type": "MAIN",
+          "template": "CompleteMainStage",
+          "missionGroup": "main_26",
+          "preMissionIds": [],
+          "target": 1,
+          "rewards": [
+            {
+              "type": "CARD_EXP",
+              "id": "2002",
+              "count": 5
+            }
+          ]
+        }
+      ],
+      "unlockCondition": [
+        {
+          "stageId": "main_01-10",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_01-12"
+      ]
+    },
+    "main_06-06": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "st_06-01",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_06-07"
+      ]
+    },
+    "main_06-15": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [
+        {
+          "type": "CHAR",
+          "id": "char_002_amiya",
+          "count": 1,
+          "evidence": "stage_table ONCE+ALWAYS CHAR; quantity/charGet semantics generalized from real-client TR-1/TR-2"
+        }
+      ],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "main_06-14",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "hard_06-01",
+        "st_06-03"
+      ]
+    },
+    "main_08-15": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "main_08-14",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "main_08-16"
+      ]
+    },
+    "main_11-15": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "easy_11-14",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "easy_11-16",
+        "main_11-16",
+        "tough_11-16"
+      ]
+    },
+    "main_11-17": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "easy_11-16",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "easy_11-18",
+        "main_11-18",
+        "st_11-03",
+        "tough_11-18"
+      ]
+    },
+    "main_14-09": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "easy_14-08",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "easy_14-10",
+        "main_14-10",
+        "tough_14-10"
+      ]
+    },
+    "main_14-20": {
+      "status": "supported",
+      "apCost": 0,
+      "apFailReturn": 0,
+      "expGain": 0,
+      "goldGain": 0,
+      "diamondOnceDrop": 1,
+      "firstPassRewards": [],
+      "missions": [],
+      "unlockCondition": [
+        {
+          "stageId": "easy_14-19",
+          "completeState": "PASS"
+        }
+      ],
+      "unlockCandidates": [
+        "hard_14-01",
+        "st_14-03"
       ]
     }
   }

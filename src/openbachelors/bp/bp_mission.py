@@ -13,7 +13,7 @@ from ..util.mission_lifecycle import reconcile_visible_missions
 router = APIRouter()
 
 
-SUPPORTED_MISSION_TYPES = {"MAIN", "SUB", "GUIDE"}
+SUPPORTED_MISSION_TYPES = {"MAIN", "SUB", "GUIDE", "DAILY", "WEEKLY"}
 
 
 def _mission_record(player_data, mission_id):
@@ -68,7 +68,7 @@ def _claim_mission(player_data, mission_id, expected_type=None):
     ):
         return {"missionId": mission_id, "items": [], "reason": "pre_mission_not_claimed"}
 
-    rewards = resource["rewards"].copy()
+    rewards = resource["rewards"].copy() if resource["rewards"] is not None else []
     unsupported = [item["type"] for item in rewards if reward_target_path(item) is None]
     if unsupported:
         return {
@@ -80,6 +80,12 @@ def _claim_mission(player_data, mission_id, expected_type=None):
 
     items = _grant_mission_rewards(player_data, rewards)
     mission["state"] = 3
+    if mission_type in {"DAILY", "WEEKLY"}:
+        point_field = "dailyPoint" if mission_type == "DAILY" else "weeklyPoint"
+        point = int(resource["periodicalPoint"] or 0)
+        player_data["mission"]["missionRewards"][point_field] = (
+            player_data["mission"]["missionRewards"][point_field] + point
+        )
     lifecycle_changes = reconcile_visible_missions(player_data)
     return {
         "missionId": mission_id,
@@ -158,4 +164,79 @@ async def mission_autoConfirmMissions(player_data, request: Request):
         skippedReasons=skipped,
         rewards=items,
     )
+    return {"items": items}
+
+
+def _periodic_reward_rows(mission_type, group_id):
+    table = const_json_loader[MISSION_TABLE]
+    source = table["periodicalRewards"] if mission_type == "DAILY" else table["weeklyRewards"]
+    return sorted(
+        (row.copy() for _, row in source if row["groupId"] == group_id),
+        key=lambda row: row["sortIndex"],
+    )
+
+
+@router.post("/mission/exchangeMissionRewards")
+@player_data_decorator
+async def mission_exchangeMissionRewards(player_data, request: Request):
+    """Claim one resource-defined daily/weekly milestone reward.
+
+    The endpoint name is confirmed by the current client route set.  Accept
+    both ``rewardId`` and the older ``id`` spelling observed in server forks.
+    """
+    body = await request.json()
+    mission_type = body.get("type")
+    reward_id = body.get("rewardId") or body.get("id")
+    if mission_type not in {"DAILY", "WEEKLY"} or not isinstance(reward_id, str):
+        return {"items": []}
+    reconcile_visible_missions(player_data)
+    marker = player_data.extra_save.save_obj.get("mission_periods_v1", {})
+    group_id = marker.get("dailyRewardGroup" if mission_type == "DAILY" else "weeklyRewardGroup")
+    rows = _periodic_reward_rows(mission_type, group_id)
+    cumulative, selected = 0, None
+    for row in rows:
+        cumulative += int(row["periodicalPointCost"])
+        if row["id"] == reward_id:
+            selected = (row, cumulative)
+            break
+    reward_state = player_data["mission"]["missionRewards"]["rewards"][mission_type]
+    point_field = "dailyPoint" if mission_type == "DAILY" else "weeklyPoint"
+    already_claimed = reward_id in reward_state and bool(reward_state[reward_id])
+    if selected is None or already_claimed or player_data["mission"]["missionRewards"][point_field] < selected[1]:
+        return {"items": []}
+    unsupported = [r["type"] for r in selected[0]["rewards"] if reward_target_path(r) is None]
+    if unsupported:
+        return {"items": []}
+    items = _grant_mission_rewards(player_data, selected[0]["rewards"])
+    reward_state[reward_id] = 1
+    event(request, "periodical_reward_confirmed", missionType=mission_type, rewardId=reward_id, pointThreshold=selected[1], rewards=items)
+    return {"items": items}
+
+
+@router.post("/mission/confirmMissionGroup")
+@player_data_decorator
+async def mission_confirmMissionGroup(player_data, request: Request):
+    body = await request.json()
+    group_id = body.get("missionGroupId") or body.get("groupId")
+    groups = const_json_loader[MISSION_TABLE]["missionGroups"]
+    if group_id not in groups:
+        return {"items": []}
+    group = groups[group_id]
+    group_states = player_data["mission"]["missionGroups"]
+    if group["type"] != "GUIDE" or (group_id in group_states and group_states[group_id] == 1):
+        return {"items": []}
+    resources = const_json_loader[MISSION_TABLE]["missions"]
+    if not all(
+        (record := _mission_record(player_data, mission_id)) is not None
+        and record["state"] == 3
+        for mission_id in group["missionIds"].copy()
+    ):
+        return {"items": []}
+    rewards = group["rewards"].copy() if group["rewards"] is not None else []
+    if any(reward_target_path(reward) is None for reward in rewards):
+        return {"items": []}
+    items = _grant_mission_rewards(player_data, rewards)
+    player_data["mission"]["missionGroups"][group_id] = 1
+    lifecycle = reconcile_visible_missions(player_data)
+    event(request, "mission_group_confirmed", missionGroupId=group_id, rewards=items, lifecycleChanges=lifecycle)
     return {"items": items}

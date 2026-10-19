@@ -1,0 +1,411 @@
+{
+  "source": "res/excel/mission_table.json",
+  "templates": {
+    "AccelerateOrder": {
+      "count": 1,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "BattleWithEnemyKill": {
+      "count": 10,
+      "types": [
+        "SUB"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "BoostNormalGacha": {
+      "count": 1,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "BoostPotential": {
+      "count": 3,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "BuyShopItem": {
+      "count": 28,
+      "types": [
+        "DAILY",
+        "GUIDE",
+        "WEEKLY"
+      ],
+      "parserSupported": true,
+      "operationHooked": false
+    },
+    "ChangeSquadName": {
+      "count": 1,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "CharIntimacy": {
+      "count": 6,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "CompleteAnyStage": {
+      "count": 56,
+      "types": [
+        "GUIDE",
+        "MAIN",
+        "RETRO"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "CompleteBreakReward": {
+      "count": 1,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "CompleteCampaign": {
+      "count": 1,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "CompleteMainStage": {
+      "count": 72,
+      "types": [
+        "MAIN"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "CompleteStage": {
+      "count": 113,
+      "types": [
+        "GUIDE",
+        "SUB"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "CompleteStageAnyType": {
+      "count": 126,
+      "types": [
+        "DAILY",
+        "WEEKLY"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "CostAp": {
+      "count": 4,
+      "types": [
+        "SPECIAL_OPERATOR_WEEKLY"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "DeliveryOrder": {
+      "count": 104,
+      "types": [
+        "DAILY",
+        "GUIDE",
+        "SUB",
+        "WEEKLY"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "DiyComfort": {
+      "count": 14,
+      "types": [
+        "GUIDE",
+        "SUB"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "EditBusinessCard": {
+      "count": 1,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "EnemyKillInAnyStage": {
+      "count": 125,
+      "types": [
+        "DAILY",
+        "WEEKLY"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "EvolveChar": {
+      "count": 10,
+      "types": [
+        "GUIDE",
+        "SUB"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "GainIntimacy": {
+      "count": 52,
+      "types": [
+        "DAILY",
+        "GUIDE",
+        "WEEKLY"
+      ],
+      "parserSupported": true,
+      "operationHooked": false
+    },
+    "GainTeamChar": {
+      "count": 2,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "HasChar": {
+      "count": 70,
+      "types": [
+        "SUB"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "HasEquipment": {
+      "count": 14,
+      "types": [
+        "SUB"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "HasRoom": {
+      "count": 22,
+      "types": [
+        "GUIDE",
+        "MAIN",
+        "SUB"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "ManufactureItem": {
+      "count": 35,
+      "types": [
+        "DAILY",
+        "GUIDE",
+        "SUB",
+        "WEEKLY"
+      ],
+      "parserSupported": true,
+      "operationHooked": false
+    },
+    "NormalGacha": {
+      "count": 51,
+      "types": [
+        "DAILY",
+        "GUIDE",
+        "WEEKLY"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "ReceiveSocialPoint": {
+      "count": 28,
+      "types": [
+        "DAILY",
+        "GUIDE",
+        "SUB",
+        "WEEKLY"
+      ],
+      "parserSupported": true,
+      "operationHooked": false
+    },
+    "RecoverCharBaseAp": {
+      "count": 75,
+      "types": [
+        "DAILY",
+        "WEEKLY"
+      ],
+      "parserSupported": true,
+      "operationHooked": false
+    },
+    "Rlv2SettleGame": {
+      "count": 1,
+      "types": [
+        "SPECIAL_OPERATOR_WEEKLY"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "Rlv2SettleGameTimes": {
+      "count": 1,
+      "types": [
+        "SPECIAL_OPERATOR_WEEKLY"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "SendClue": {
+      "count": 1,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "SetAssistCharList": {
+      "count": 3,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "SetBuildingAssist": {
+      "count": 1,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "SquadFormation": {
+      "count": 1,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "StageWithAssistChar": {
+      "count": 25,
+      "types": [
+        "DAILY",
+        "WEEKLY"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "StageWithEnemyKill": {
+      "count": 49,
+      "types": [
+        "DAILY",
+        "WEEKLY"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "StageWithReplay": {
+      "count": 1,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "StartInfoShare": {
+      "count": 1,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "TakeOverReplay": {
+      "count": 1,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "UpgradeChar": {
+      "count": 30,
+      "types": [
+        "DAILY",
+        "GUIDE",
+        "SUB",
+        "WEEKLY"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "UpgradePlayer": {
+      "count": 2,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "UpgradeSkill": {
+      "count": 3,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": true,
+      "operationHooked": true
+    },
+    "UpgradeSpecialization": {
+      "count": 5,
+      "types": [
+        "GUIDE",
+        "SUB"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "VisitBuilding": {
+      "count": 26,
+      "types": [
+        "DAILY",
+        "GUIDE",
+        "WEEKLY"
+      ],
+      "parserSupported": true,
+      "operationHooked": false
+    },
+    "WorkshopExBonus": {
+      "count": 1,
+      "types": [
+        "GUIDE"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    },
+    "WorkshopSynthesis": {
+      "count": 30,
+      "types": [
+        "GUIDE",
+        "SUB"
+      ],
+      "parserSupported": false,
+      "operationHooked": false
+    }
+  },
+  "notes": {
+    "eventSemantics": "Only successful server-side operations emit events.",
+    "unsupported": "No progress is fabricated; requires an implemented operation/protocol or confirmed parameter semantics."
+  }
+}

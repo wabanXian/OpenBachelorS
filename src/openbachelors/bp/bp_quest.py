@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from fastapi import Request
 
 from ..const.json_const import true, false, null
-from ..const.filepath import CONFIG_JSON, VERSION_JSON, ASSIST_JSON
+from ..const.filepath import CONFIG_JSON, VERSION_JSON, ASSIST_JSON, CHARACTER_TABLE
 from ..util.const_json_loader import const_json_loader
 from ..util.player_data import player_data_decorator
 from ..util.helper import (
@@ -26,6 +26,7 @@ from ..util.battle_settlement import (
 )
 from ..util.player_preset import POST_TUTORIAL_PRESET
 from ..util.assist_ext import profession_lst, profession_assist_lst_dict
+from ..util.mission_lifecycle import apply_mission_event
 
 
 router = APIRouter()
@@ -39,6 +40,22 @@ async def quest_squadFormation(player_data, request: Request):
     squad_id = request_json["squadId"]
     before_slots = player_data["troop"]["squads"][squad_id]["slots"].copy()
     player_data["troop"]["squads"][squad_id]["slots"] = request_json["slots"]
+    mission_changes = apply_mission_event(
+        player_data,
+        "squad_formation",
+        {
+            "count": 1,
+            "squadId": squad_id,
+            "professions": [
+                const_json_loader[CHARACTER_TABLE][
+                    player_data["troop"]["chars"][str(slot["charInstId"])]["charId"]
+                ]["profession"]
+                for slot in request_json["slots"]
+                if slot is not None
+                and str(slot["charInstId"]) in player_data["troop"]["chars"]
+            ],
+        },
+    )
 
     event(
         request,
@@ -50,6 +67,7 @@ async def quest_squadFormation(player_data, request: Request):
         afterCharInstIds=[
             slot["charInstId"] for slot in request_json["slots"] if slot is not None
         ],
+        missionChanges=mission_changes,
     )
 
     response = {}

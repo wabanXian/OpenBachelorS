@@ -20,6 +20,7 @@ from ..util.player_data import player_data_decorator, char_id_lst, player_data_t
 from ..util.helper import get_char_num_id
 from ..util.battle_log_logger import log_battle_log_if_necessary
 from ..util.tutorial_debug import event
+from ..util.mission_lifecycle import apply_mission_event
 
 router = APIRouter()
 
@@ -220,7 +221,12 @@ async def charBuild_upgradeChar(player_data, request: Request):
     player_data["status"]["gold"] = before["gold"] - result["goldCost"]
     char["level"] = result["level"]
     char["exp"] = result["exp"]
-    mission_changes = _advance_upgrade_char_mission(player_data)
+    mission_changes = apply_mission_event(
+        player_data,
+        "upgrade_char",
+        {"count": 1, "charInstId": char_inst_id, "charId": char["charId"]},
+        event_id=request_fingerprint,
+    )
     if journal is not None:
         journal.save_obj["last_char_upgrade"] = {
             "fingerprint": request_fingerprint,

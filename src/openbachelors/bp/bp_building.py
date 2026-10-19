@@ -14,6 +14,7 @@ from ..util.building_state import (
 )
 from ..util.tutorial_debug import event
 from ..util.mission_lifecycle import update_has_room_missions
+from ..util.mission_lifecycle import apply_mission_event
 
 router = APIRouter()
 
@@ -233,6 +234,11 @@ async def building_deliveryOrder(player_data, request: Request):
         "building_trade_order_delivered",
         requestFields=sorted(request_json),
         **result,
+    )
+    apply_mission_event(
+        player_data,
+        "delivery_order",
+        {"count": 1, "roomSlotId": slot_id, "orderId": order_id},
     )
     return {"result": 0}
 

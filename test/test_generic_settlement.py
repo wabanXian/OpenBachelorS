@@ -326,7 +326,7 @@ def test_main_zero_eleven_melantha_reward_uses_builtin_e0_skin():
     value = player()
     unlock(value, "main_00-11", [("main_00-10", 2)])
     start(value, "main_00-11", 100)
-    finish(value, result("main_00-11", 3, 100))
+    settlement = finish(value, result("main_00-11", 3, 100))
     melantha = next(
         char for _, char in value["troop"]["chars"]
         if char["charId"] == "char_208_melan"
@@ -335,6 +335,10 @@ def test_main_zero_eleven_melantha_reward_uses_builtin_e0_skin():
     assert melantha["skin"] == "char_208_melan#1"
     assert "char_208_melan#1" in value["skin"]["characterSkins"]
     assert "char_208_melan@epoque#1" not in value["skin"]["characterSkins"]
+    assert settlement["response"]["unlockStages"] == ["main_01-01"]
+    assert value["dungeon"]["stages"]["main_01-01"].copy() == _stage_record(
+        "main_01-01"
+    )
 
 
 @pytest.mark.parametrize("stars", [2, 3])
