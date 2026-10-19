@@ -1,69 +1,67 @@
-# 干员养成 API 审计（2026-10-17）
+# 干员养成 API 审计（2026-10-19）
 
-## 本轮已实现
+## 当前实现
 
-`POST /charBuild/upgradeChar`
+### `POST /charBuild/upgradeChar`
 
-- 请求形状：`charInstId: int`、`expMats: [{id: string, count: int}]`。
-- 作战记录经验值来自 `item_table.json.expItems`。
-- 当前精英阶段的逐级经验和龙门币成本来自
-  `gamedata_const.json.characterExpMap` 与 `characterUpgradeCostMap`。
-- 等级上限来自 `character_table.json.chars[charId].phases[phase].maxLevel`。
-- 先验证干员、阶段、等级、作战记录、龙门币和升级上限，再在同一个
-  `player_data_decorator` 保存单元内扣除资产和更新 `troop.chars`。
-- 若存档中已经存在 `UpgradeChar` 类型见习任务（包括 `guide_1`），成功强化后推进一次；
-  本接口不会凭空创建尚未由任务链开放的任务。
-- `extra.json.last_char_upgrade` 保存最近一次请求摘要及结算后状态。完全相同的网络重放在
-  玩家状态仍等于上次结算后状态时作为幂等重放忽略。
+- 请求：`charInstId: int`、`expMats: [{id: string, count: int}]`。
+- 作战记录经验来自 `item_table.json.expItems`。
+- 等级经验和龙门币消耗来自 `gamedata_const.json.characterExpMap` 与 `characterUpgradeCostMap`。
+- 当前精英阶段等级上限来自 `character_table.json[charId].phases[phase].maxLevel`。
+- 修改 `troop.chars`、库存和 `status.gold`，并驱动 `UpgradeChar` 任务事件。
+- `extra.json.last_char_upgrade` 用于拦截最近一次完全相同请求的网络重放。
 
-## 协议证据与限制
+### `POST /charBuild/evolveChar`
 
-已静态观察到当前 CN 客户端
-`Arknights_Data/il2cpp_data/Metadata/global-metadata.dat` 在文件偏移
-`2776347` 附近连续包含 `UpgradeCharRequest`、`expMats`、`ExpMat`、
-`UpgradeCharResponse`。这确认了请求类型和 `expMats` 字段；`ExpMat` 的
-`id/count` 形状仍需真实 HTTP 请求日志最终确认。`GameAssembly.dll` SHA-256 为
-`583b04ff4d1b1a4b35eaf09d77d936408c25447c9e345ef0463d814b6a123fc5`。
+- 当前 PC 客户端运行时类型 `Torappu.EvolveCharRequest` 已确认请求为
+  `charInstId: int`、`destEvolvePhase: EvolvePhase`；响应 `EvolveCharResponse`
+  仅继承 `PlayerDeltaResponse`。
+- 只接受相邻阶段 E0→E1 或 E1→E2，且当前阶段必须满级、经验为 0。
+- 目标阶段和材料来自 `character_table.json[charId].phases[dest].evolveCost`；
+  龙门币来自 `gamedata_const.json.evolveGoldCost[rarity-1][currentPhase]`。
+- 成功后目标阶段设为 1 级、0 经验；刷新当前形态技能解锁状态，但不开放其他尚未解锁的职业形态。
+- 内置精英化皮肤来自 `skin_table.json.buildinEvolveMap/buildinPatchMap`。只有当前装备仍是上一阶段内置皮肤时才自动切换；玩家主动装备的合法时装不会被覆盖。
+- 驱动资源定义的 `EvolveChar` 状态任务；最近一次相同请求通过 `extra.json.last_char_evolve` 幂等拦截。
 
-资源只给出每一级完整 EXP 与完整龙门币成本。当前对半级经验采用“完整成本按该级经验比例向上取整”；
-这是资源驱动推导，不是已经由真实服务端响应证明的舍入边界。开启现有 HTTP DEBUG 后，客户端首次调用会
-记录脱敏请求体和 `playerDataDelta`，应据此核对字段及边界。
+### `POST /charBuild/upgradeSkill`
 
-协议未观察到客户端请求 ID。最近一次状态摘要可以防止断线后的相同请求重放，但无法完美区分“网络重试”
-与玩家立即再次提交完全相同的强化选择；这是协议本身缺少幂等键时的固有限制。
+- 当前 PC 客户端运行时类型 `Torappu.UpgradeSkillRequest` 已确认请求为
+  `charInstId: int`、`targetLevel: int`；响应 `UpgradeSkillResponse` 仅继承 `PlayerDeltaResponse`。
+- 普通技能等级保存在 `troop.chars[*].mainSkillLvl`，一次只能提升一级，最高 7。
+- 第 N→N+1 级条件和材料来自当前形态资源的 `allSkillLvlup[N-1].unlockCond/lvlUpCost`。
+  当前资源的普通技能升级费用表没有龙门币项，因此服务端不会凭空扣除龙门币。
+- 不修改各技能的 `specializeLevel`，并兼容技能列表位于当前 `tmpl` 的多形态干员。
+- 驱动 `UpgradeSkill` 事件型与状态型任务；最近一次相同请求通过
+  `extra.json.last_char_skill_upgrade` 幂等拦截。
 
-## `/charBuild` 路由清单
+## 事务与已知边界
+
+- 两个新增接口均在首次存档修改前完成请求、阶段、资源、库存和 schema 校验；验证失败不会扣除材料或货币。
+- 沿用 `player_data_decorator`、OverlayJson 差量与账号独立存储，不迁移或重建旧存档。
+- 当前客户端请求没有幂等键。服务端只能安全识别“最近一次相同请求且结算后状态完全一致”的重放；跨多次其他养成操作后再次重放旧包无法被协议完美区分。
+- 本轮不实现潜能、技能专精 M1～M3、模组、训练室、职业转换及养成直升道具。
+
+## `/charBuild` 路由状态
 
 | 路由 | 状态 | 说明 |
 | --- | --- | --- |
-| `/charBuild/upgradeChar` | 已实现，待真实客户端确认 | 本轮资源驱动实现 |
-| `/charBuild/setDefaultSkill` | 已有 | 未在本轮重验协议校验 |
-| `/charBuild/setEquipment` | 已有 | 未在本轮重验解锁校验 |
-| `/charBuild/setCharVoiceLan` | 已有 | 已注册 |
-| `/charBuild/batchSetCharVoiceLan` | 已有 | 已注册 |
-| `/charBuild/changeCharSkin` | 已有 | 已注册 |
-| `/charBuild/changeCharTemplate` | 已有 | 已注册 |
-| `/charBuild/changeSkinSpState` | 已有 | 已注册 |
-| `/charBuild/addonStage/battleStart` | 已有占位 | 不等同普通关卡结算 |
-| `/charBuild/addonStage/battleFinish` | 已有占位 | 只记录战斗日志并返回空首通奖励 |
-| `/charBuild/evolveChar` | 缺失 | 新手期常规精英化必经；请求/响应和材料扣除尚未取证 |
-| `/charBuild/upgradeSkill` | 缺失 | `guide_2` 依赖；请求结构尚未取证 |
-| `/charBuild/boostPotential` | 缺失 | 潜能提升；请求结构尚未取证 |
-| `/charBuild/upgradeSpecialization` | 缺失 | 专精开始；涉及计时状态 |
-| `/charBuild/completeUpgradeSpecialization` | 缺失 | 专精完成；涉及计时状态 |
-| `/charBuild/unlockEquipment` | 缺失 | 模组解锁；条件和消耗尚未实现 |
-| `/charBuild/upgradeEquipment` | 缺失 | 模组升级；条件和消耗尚未实现 |
-| `/charBuild/addonStory/unlock` | 缺失 | 模组故事相关 |
-| `/charBuild/getSpCharMissionReward` | 缺失 | 特殊干员任务奖励 |
+| `/charBuild/upgradeChar` | 已实现 | 等级、经验、作战记录、龙门币、任务、持久化 |
+| `/charBuild/evolveChar` | 已实现，待 PC 实机验收 | E0→E1、E1→E2、材料、技能解锁、内置皮肤、任务 |
+| `/charBuild/upgradeSkill` | 已实现，待 PC 实机验收 | 普通技能 1→7；不含专精 |
+| `/charBuild/setDefaultSkill` | 已有 | 现有实现；本轮未扩展协议校验 |
+| `/charBuild/changeCharSkin` | 已有 | 现有实现；精英化不会覆盖主动时装 |
+| `/charBuild/changeCharTemplate` | 已有 | 本轮不开放尚未解锁的职业模板 |
+| `/charBuild/boostPotential` | 缺失 | 不在本轮范围 |
+| `/charBuild/upgradeSpecialization` | 缺失 | 不在本轮范围 |
+| `/charBuild/completeUpgradeSpecialization` | 缺失 | 不在本轮范围 |
+| `/charBuild/unlockEquipment`、`upgradeEquipment` | 缺失 | 模组，不在本轮范围 |
 
-参考项目中出现但本仓库同样缺失的还有 `lockChar`、`sellChar`、
-`evolveCharUseItem`、`upgradeCharLevelMaxUseItem` 和
-`upgradeSpecializedSkillUseItem`。参考项目对应 `upgradeChar` 仅返回 HTTP 202，
-没有可复用的资产或升级实现，因此不能作为正确协议依据。
+## 验证依据
 
-## 新手期 API 缺口优先级
-
-静态路由审计显示，战斗、剧情、教学招募、编队、单项/批量任务领奖目前已有路由；
-养成链中最先会再次造成 404 的是 `/charBuild/upgradeSkill`、
-`/charBuild/evolveChar` 和 `/charBuild/boostPotential`。这些接口没有在本轮返回假的成功结果，
-应分别取得真实请求体后再接入资源表消耗与任务推进。
+- 当前 PC 导出：`OpenBachelorC/dump/pc/20261019_144647_unknown/dump.cs`。
+- 静态规则：当前客户端对应版本的 `character_table.json`、`gamedata_const.json`、
+  `skin_table.json`、`char_patch_table.json`、`item_table.json`。
+- 自动化覆盖普通干员与阿米娅多形态结构、E0→E1、E1→E2、1→2、6→7、
+  条件及资源不足原子失败、任务、皮肤、技能解锁、专精不变、重放和重载持久化。
+- 自动化与协议结构通过不等同于 PC UI 验收；首次实机操作仍需核对请求日志、
+  `playerDataDelta` 和客户端最终显示。

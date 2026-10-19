@@ -199,7 +199,12 @@ def _state_value(player_data, spec):
     if spec.get("state") == "char_intimacy":
         return min(spec["target"], sum(1 for _, char in player_data["troop"]["chars"] if favor_percent(char["favorPoint"]) >= spec["percent"]))
     if spec.get("state") == "has_room":
-        count = sum(1 for _, room in player_data["building"]["roomSlots"] if room.get("roomId") == spec["roomType"] and _int(room.get("level")) >= spec["level"])
+        count = sum(
+            1
+            for _, room in player_data["building"]["roomSlots"]
+            if (room["roomId"] if "roomId" in room else None) == spec["roomType"]
+            and _int(room["level"] if "level" in room else None) >= spec["level"]
+        )
         return min(spec["target"], count)
     return 0
 
