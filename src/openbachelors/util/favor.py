@@ -71,16 +71,30 @@ def build_squad_favor_snapshot(player_data, request_json):
             current_tmpl = requested_tmpl or char.get("currentTmpl")
             if not isinstance(current_tmpl, str) or current_tmpl not in templates:
                 return None, "invalid_character_template"
+            loadout = templates[current_tmpl]
         elif requested_tmpl not in (None, char_id):
             return None, "invalid_character_template"
         else:
             current_tmpl = None
+            loadout = char
+
+        requested_equip = slot.get("currentEquip")
+        if templates and isinstance(slot.get("tmpl"), dict):
+            requested_loadout = slot["tmpl"].get(current_tmpl)
+            if isinstance(requested_loadout, dict):
+                requested_equip = requested_loadout.get("currentEquip")
+        if requested_equip is not None:
+            equips = loadout.get("equip") or {}
+            equip = equips.get(requested_equip)
+            if not isinstance(equip, dict) or equip.get("locked") or int(equip.get("level", 0)) < 1:
+                return None, "squad_module_not_unlocked"
 
         snapshot.append(
             {
                 "charInstId": inst_id,
                 "charId": char_id,
                 "currentTmpl": current_tmpl,
+                "currentEquip": requested_equip,
             }
         )
     return snapshot, None

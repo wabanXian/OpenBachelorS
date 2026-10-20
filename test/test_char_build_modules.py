@@ -9,6 +9,7 @@ from openbachelors.bp.bp_charBuild import (
     router,
 )
 from openbachelors.util.player_data import DeltaJson
+from openbachelors.util.favor import build_squad_favor_snapshot
 
 from .test_char_build_evolve_skill import add_costs, make_player, make_request
 
@@ -111,6 +112,24 @@ async def test_module_equip_unequip_and_cross_operator_rejection():
     with pytest.raises(HTTPException, match="module_not_compatible"):
         await charBuild_setEquipment.__wrapped__(player, request("/charBuild/setEquipment", charInstId=2, templateId="char_002_amiya", equipId="uniequip_002_doberm"))
     assert player.copy() == before
+
+
+def test_battle_squad_rejects_locked_module_and_preserves_unlocked_selection():
+    player = make_player()
+    _, loadout = prepare_amiya_module(player)
+    slot = {
+        "charInstId": 2,
+        "currentTmpl": "char_002_amiya",
+        "tmpl": {"char_002_amiya": {"skillIndex": 0, "currentEquip": EQUIP}},
+    }
+    snapshot, error = build_squad_favor_snapshot(player, {"squad": {"slots": [slot]}})
+    assert snapshot is None
+    assert error == "squad_module_not_unlocked"
+
+    loadout["equip"] = {EQUIP: {"hide": 0, "locked": 0, "level": 1}}
+    snapshot, error = build_squad_favor_snapshot(player, {"squad": {"slots": [slot]}})
+    assert error is None
+    assert snapshot[0]["currentEquip"] == EQUIP
 
 
 @pytest.mark.asyncio

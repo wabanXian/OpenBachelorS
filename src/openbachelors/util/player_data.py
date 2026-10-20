@@ -77,6 +77,7 @@ from .building_state import (
 )
 from .tutorial_debug import event as tutorial_event, player_snapshot
 from .mission_lifecycle import reconcile_visible_missions
+from .module_mission_lifecycle import reconcile_module_missions
 from .campaign_lifecycle import reconcile_campaign_unlocks
 from .battle_settlement import (
     reconcile_pending_session,
@@ -1368,6 +1369,15 @@ class PlayerData(OverlayJson, SavableThing):
                         "reason": "mission_visibility_lifecycle_reconciled",
                         "changeCount": len(mission_changes),
                         "changes": mission_changes,
+                    }
+                )
+            module_mission_changes = reconcile_module_missions(player_data)
+            if module_mission_changes:
+                schema_repairs.append(
+                    {
+                        "reason": "module_mission_visibility_reconciled",
+                        "changeCount": len(module_mission_changes),
+                        "changes": module_mission_changes,
                     }
                 )
             campaign_changes = reconcile_campaign_unlocks(player_data)

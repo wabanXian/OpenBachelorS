@@ -16,6 +16,7 @@ from .faketime import faketime
 from .favor import build_squad_favor_snapshot, plan_battle_favor
 from .mainline_unlock import unlock_conditions_for
 from .mission_lifecycle import plan_mission_events
+from .module_mission_lifecycle import plan_module_battle_missions
 from .campaign_lifecycle import plan_campaign_unlocks
 from .player_progression import plan_player_exp_gain
 from .reward_grant import plan_reward
@@ -529,6 +530,15 @@ def prepare_battle_finish(player_data, decoded, raw_data):
         )
         mutations.extend(mission_mutations)
         rewards["missionChanges"] = mission_changes
+        module_mutations, module_changes = plan_module_battle_missions(
+            player_data,
+            decoded,
+            stars,
+            event_id=session["sessionId"],
+            squad_snapshot=session.get("squadSnapshot"),
+        )
+        mutations.extend(module_mutations)
+        rewards["moduleMissionChanges"] = module_changes
 
     session.update(
         {

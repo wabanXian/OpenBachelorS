@@ -99,8 +99,9 @@ def test_success_grants_actual_ap_to_every_snapshotted_operator(stars):
             "charInstId": 2,
             "charId": "char_002_amiya",
             "currentTmpl": "char_002_amiya",
+            "currentEquip": None,
         },
-        {"charInstId": 502, "charId": "char_502_nblade", "currentTmpl": None},
+        {"charInstId": 502, "charId": "char_502_nblade", "currentTmpl": None, "currentEquip": None},
     ]
     assert value["troop"]["chars"]["2"]["favorPoint"] == 6
     assert value["troop"]["charGroup"]["char_002_amiya"]["favorPoint"] == 6

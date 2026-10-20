@@ -6,6 +6,7 @@ from openbachelors.bp.bp_charBuild import (
     charBuild_completeUpgradeSpecialization,
     charBuild_upgradeSpecialization,
 )
+from openbachelors.bp.bp_building import building_assignChar
 from openbachelors.util.player_data import DeltaJson
 
 from .test_char_build_evolve_skill import add_costs, make_player, make_request
@@ -81,6 +82,28 @@ async def test_specialization_m0_to_m1_consumes_exact_cost_and_observes_timer(mo
     assert skill["specializeLevel"] == 1
     assert skill["completeUpgradeTime"] == -1
     assert room["trainee"]["state"] == 3
+    assert player["building"]["roomSlots"]["slot_13"]["charInstIds"].copy() == [-1, 2]
+    assert player["building"]["chars"]["2"]["roomSlotId"] == "slot_13"
+
+    # WAITING is the client-visible post-completion state.  Changing the
+    # trainee through the ordinary building API must release the old operator
+    # and leave the new one selectable for the next specialization.
+    await building_assignChar.__wrapped__(
+        player,
+        make_request(
+            "/building/assignChar",
+            {"roomSlotId": "slot_13", "charInstIdList": [-1, 502]},
+        ),
+    )
+    assert room["trainee"].copy() == {
+        "charInstId": 502,
+        "state": 3,
+        "targetSkill": -1,
+        "processPoint": -1,
+        "speed": 1,
+    }
+    assert player["building"]["chars"]["2"]["roomSlotId"] == ""
+    assert player["building"]["chars"]["502"]["roomSlotId"] == "slot_13"
 
 
 @pytest.mark.asyncio

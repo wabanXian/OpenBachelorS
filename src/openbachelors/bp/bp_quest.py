@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi import Request
 
 from ..const.json_const import true, false, null
@@ -27,6 +27,7 @@ from ..util.battle_settlement import (
 from ..util.player_preset import POST_TUTORIAL_PRESET
 from ..util.assist_ext import profession_lst, profession_assist_lst_dict
 from ..util.mission_lifecycle import apply_mission_event
+from ..util.favor import build_squad_favor_snapshot
 
 
 router = APIRouter()
@@ -38,6 +39,11 @@ async def quest_squadFormation(player_data, request: Request):
     request_json = await request.json()
 
     squad_id = request_json["squadId"]
+    _, squad_error = build_squad_favor_snapshot(
+        player_data, {"squad": {"slots": request_json["slots"]}}
+    )
+    if squad_error:
+        raise HTTPException(status_code=400, detail=squad_error)
     before_slots = player_data["troop"]["squads"][squad_id]["slots"].copy()
     player_data["troop"]["squads"][squad_id]["slots"] = request_json["slots"]
     mission_changes = apply_mission_event(

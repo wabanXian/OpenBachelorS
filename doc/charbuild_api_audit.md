@@ -67,3 +67,24 @@
 - 资源：`character_table.json`、`item_table.json`、`gamedata_const.json`、`skin_table.json`、`char_patch_table.json`、`building_data.json`、`uniequip_table.json`。
 - 自动化测试覆盖资源扣除、非法条件、连续提升、计时、重放以及普通/多模板存档结构。
 - PC 客户端请求字段与 UI 展示仍需实机抽样确认；自动化测试通过不等于客户端验收通过。
+-
+
+## 2026-10-21 状态分级补充
+
+### 技能专精
+
+- **代码已实现**：`upgradeSpecialization(charInstId, skillIndex,targetLevel)` 与空请求体的 `completeUpgradeSpecialization`；按 GameData 扣材料、校验训练室等级并使用真实计时。
+- **自动化测试通过**：M0→M1→M2→M3、提前完成拒绝、请求重放、重登持久化、完成后 `trainee.state=WAITING(3)`，以及通过 `/building/assignChar` 更换学员并释放旧占用。
+- **PC 协议证据**：当前客户端 `PlayerBuildingTraineeState` 为 `EMPTY=0/TRAINING=1/OUTOFDATE=2/WAITING=3`；完成响应为纯 `PlayerDeltaResponse`，训练界面具有独立完成动画和成功界面。因此完成后保留 WAITING，而不是伪装成 EMPTY。
+- **Windows PC 实机验证**：尚未完成。训练协助者、基建技能加速、立即完成道具不在本轮支持范围。
+
+### 模组任务、解锁与装备
+
+- **代码已实现**：登录时仅为达到模组任务开放等级的已拥有干员补齐 `{value,target}` 记录，不赠送进度；成功战斗依据解码后的 `charStats`、`skillTrigStats` 与 `extraBattleInfo` 推进可验证任务。
+- **自动化测试通过**：真实部署证据、累计条件、失败/中断不推进、战斗结算原子写入、重复结算幂等、重登持久化，以及已有解锁、升级、装备/卸下、跨干员拒绝测试。
+- **PC 协议证据**：客户端存档类型 `PlayerEquipMission` 只有 `value/target`；GameData `UniEquipMissionData` 提供 `template/paramList/uniEquipId/jumpStageId`。真实 PC 战斗记录已观察到 `SPAWN/DEAD`、技能触发次数和精确的 `extraBattleInfo` 条件键。
+- **Windows PC 实机验证**：尚未完成。未被真实战斗证据覆盖的模板不会自动完成，详见 `doc/module_mission_audit.md`。
+
+### 非本轮系统
+
+- `addonStage/battleStart`、`addonStage/battleFinish`、`addonStory/unlock` 属于干员密录/悖论模拟相关流程，不作为模组任务的替代入口；未经协议确认仍明确拒绝，绝不返回假成功。

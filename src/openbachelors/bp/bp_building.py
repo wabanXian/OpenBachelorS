@@ -329,6 +329,11 @@ async def building_assignChar(player_data, request: Request):
             request, "assignChar", BuildingRuleError("unknown_room_slot"), roomSlotId=room_id
         )
     slot_snapshot = player_data["building"]["roomSlots"][room_id].copy()
+    training_room = None
+    if slot_snapshot.get("roomId") == "TRAINING":
+        training_rooms = player_data["building"]["rooms"]["TRAINING"]
+        if room_id in training_rooms:
+            training_room = training_rooms[room_id]
     expected_slots = len(slot_snapshot.get("charInstIds", []))
     assigned = [value for value in char_num_id_lst if value != -1]
     known_chars = player_data["building"]["chars"].copy()
@@ -345,6 +350,17 @@ async def building_assignChar(player_data, request: Request):
             requestedCount=len(char_num_id_lst),
             capacity=expected_slots,
         )
+
+    if training_room is not None:
+        current_trainee = training_room["trainee"]
+        requested_trainee = char_num_id_lst[1] if len(char_num_id_lst) > 1 else -1
+        if current_trainee["state"] == 1 and requested_trainee != current_trainee["charInstId"]:
+            return _building_error(
+                request,
+                "assignChar",
+                BuildingRuleError("training_room_busy"),
+                roomSlotId=room_id,
+            )
 
     old_char_num_id_lst = player_data["building"]["roomSlots"][room_id][
         "charInstIds"
@@ -374,6 +390,25 @@ async def building_assignChar(player_data, request: Request):
         player_data["building"]["chars"][str(char_num_id)]["index"] = char_idx
 
     player_data["building"]["roomSlots"][room_id]["charInstIds"] = char_num_id_lst
+
+    if training_room is not None and training_room["trainee"]["state"] != 1:
+        trainer_id = char_num_id_lst[0] if char_num_id_lst else -1
+        trainee_id = char_num_id_lst[1] if len(char_num_id_lst) > 1 else -1
+        old_trainee = training_room["trainee"].copy()
+        training_room["trainer"] = {
+            "charInstId": trainer_id,
+            "state": 3 if trainer_id != -1 else 0,
+        }
+        if trainee_id == old_trainee["charInstId"] and old_trainee["state"] == 3:
+            training_room["trainee"] = old_trainee
+        else:
+            training_room["trainee"] = {
+                "charInstId": trainee_id,
+                "state": 3 if trainee_id != -1 else 0,
+                "targetSkill": -1,
+                "processPoint": -1,
+                "speed": 1,
+            }
 
     event(
         request,

@@ -910,9 +910,7 @@ async def charBuild_upgradeSpecialization(player_data, request: Request):
     if room_level < 1 or room_level > len(phases) or phases[room_level - 1]["specSkillLvlLimit"] < target_level:
         raise HTTPException(status_code=400, detail="training_room_level_insufficient")
     trainee = room["trainee"]
-    if trainee["state"] not in (0, 3) or (
-        trainee["state"] == 3 and trainee["charInstId"] not in (-1, char_inst_id)
-    ):
+    if trainee["state"] not in (0, 3):
         raise HTTPException(status_code=400, detail="training_room_busy")
     building_char = player_data["building"]["chars"][key] if key in player_data["building"]["chars"] else None
     if building_char is None:
@@ -934,6 +932,14 @@ async def charBuild_upgradeSpecialization(player_data, request: Request):
     now = int(faketime())
     complete_time = now + duration
     _apply_cost_plan(player_data, plan)
+    previous_trainee_id = int(trainee["charInstId"] if "charInstId" in trainee else -1)
+    if previous_trainee_id not in (-1, char_inst_id):
+        previous_key = str(previous_trainee_id)
+        if previous_key in player_data["building"]["chars"]:
+            previous = player_data["building"]["chars"][previous_key]
+            if previous["roomSlotId"] == slot_id and previous["index"] == 1:
+                previous["roomSlotId"] = ""
+                previous["index"] = -1
     _set_specialization_skill_field(loadout, skill_index, "completeUpgradeTime", complete_time)
     room["state"] = 1
     room["lastUpdateTime"] = now
