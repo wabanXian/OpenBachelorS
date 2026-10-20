@@ -15,6 +15,8 @@ from ..const.filepath import (
     GAMEDATA_CONST,
     MISSION_TABLE,
     CHAR_PATCH_TABLE,
+    BUILDING_DATA,
+    UNIEQUIP_TABLE,
 )
 from ..util.const_json_loader import const_json_loader
 from ..util.player_data import player_data_decorator, char_id_lst, player_data_template
@@ -23,6 +25,7 @@ from ..util.battle_log_logger import log_battle_log_if_necessary
 from ..util.tutorial_debug import event
 from ..util.mission_lifecycle import apply_mission_event, reconcile_visible_missions
 from ..util.operator_skin import default_evolve_skin, default_template_skin, OperatorSkinError
+from ..util.faketime import faketime
 
 router = APIRouter()
 
@@ -301,6 +304,153 @@ def _is_charbuild_replay(journal, journal_key, fingerprint, char, player_data):
     return after == _charbuild_state(char, player_data, set(after["materials"]))
 
 
+def _potential_item_plan(char_resource, item_id):
+    """Return the GameData-authorized item count for one potential rank."""
+    exclusive = {
+        char_resource.get("potentialItemId"),
+        char_resource.get("activityPotentialItemId"),
+        char_resource.get("classicPotentialItemId"),
+    }
+    exclusive.discard(None)
+    if item_id in exclusive:
+        return {item_id: 1}
+    if not char_resource.get("canUseGeneralPotentialItem"):
+        raise ValueError("general_potential_item_not_allowed")
+    rarity = _rarity_number(char_resource.get("rarity"))
+    profession = char_resource.get("profession")
+    potential_items = const_json_loader[ITEM_TABLE]["potentialItems"]
+    rarity_row = potential_items[str(rarity - 1)] if str(rarity - 1) in potential_items else None
+    expected = rarity_row[profession] if rarity_row is not None and profession in rarity_row else None
+    if item_id != expected:
+        raise ValueError("invalid_potential_item")
+    return {item_id: 4}
+
+
+def _potential_state(char, player_data, item_id):
+    return {
+        "potentialRank": char["potentialRank"],
+        "itemId": item_id,
+        "itemCount": player_data["inventory"][item_id]
+        if item_id in player_data["inventory"]
+        else 0,
+    }
+
+
+def _training_room(player_data):
+    slots = player_data["building"]["roomSlots"]
+    rooms = player_data["building"]["rooms"]
+    training_rooms = rooms["TRAINING"] if "TRAINING" in rooms else None
+    if training_rooms is None:
+        raise ValueError("training_room_not_built")
+    found = []
+    for slot_id, slot in slots:
+        if slot["roomId"] == "TRAINING" and slot["state"] == 2 and slot["level"] > 0:
+            if slot_id not in training_rooms:
+                raise ValueError("training_room_schema_missing")
+            found.append((slot_id, slot, training_rooms[slot_id]))
+    if len(found) != 1:
+        raise ValueError("training_room_not_built" if not found else "multiple_training_rooms")
+    return found[0]
+
+
+def _specialization_skill(char, skill_index):
+    loadout, resource = _current_loadout_and_resource(char)
+    skills = loadout["skills"] if "skills" in loadout else None
+    definitions = resource.get("skills") or []
+    if (
+        not isinstance(skill_index, int)
+        or isinstance(skill_index, bool)
+        or skills is None
+        or skill_index < 0
+        or skill_index >= len(skills)
+        or skill_index >= len(definitions)
+    ):
+        raise ValueError("invalid_skill_index")
+    return loadout, skills[skill_index], definitions[skill_index]
+
+
+def _set_specialization_skill_field(loadout, skill_index, field, value):
+    skills = loadout["skills"].copy()
+    row = skills[skill_index].copy()
+    row[field] = value
+    skills[skill_index] = row
+    loadout["skills"] = skills
+
+
+def _specialization_state(char, player_data, item_ids, slot_id, skill_index):
+    _, stored_skill, _ = _specialization_skill(char, skill_index)
+    room = player_data["building"]["rooms"]["TRAINING"][slot_id]
+    return {
+        "specializeLevel": stored_skill["specializeLevel"],
+        "completeUpgradeTime": stored_skill["completeUpgradeTime"],
+        "trainee": room["trainee"].copy(),
+        "gold": player_data["status"]["gold"],
+        "materials": {
+            item_id: player_data["inventory"][item_id]
+            if item_id in player_data["inventory"]
+            else 0
+            for item_id in sorted(item_ids)
+        },
+    }
+
+
+def _module_loadout(char, template_id):
+    char_id = char["charId"]
+    if "tmpl" in char and len(char["tmpl"]):
+        if not isinstance(template_id, str) or template_id not in char["tmpl"]:
+            raise ValueError("invalid_module_template")
+        return char["tmpl"][template_id], template_id
+    if template_id not in (None, "", char_id):
+        raise ValueError("invalid_module_template")
+    return char, None
+
+
+def _module_resource(char, template_id, equip_id):
+    table = const_json_loader[UNIEQUIP_TABLE]
+    if equip_id not in table["equipDict"]:
+        raise ValueError("unknown_module")
+    resource = table["equipDict"][equip_id].copy()
+    owner = template_id if resource.get("tmplId") else char["charId"]
+    expected_owner = resource.get("tmplId") or resource.get("charId")
+    if owner != expected_owner:
+        raise ValueError("module_not_compatible")
+    char_equips = table["charEquip"]
+    list_key = template_id if template_id in char_equips else char["charId"]
+    if list_key not in char_equips:
+        raise ValueError("module_not_compatible")
+    # ConstJson's list wrapper intentionally only implements dictionary-style
+    # membership.  Materialise the resource list before checking the equip id.
+    if equip_id not in char_equips[list_key].copy():
+        raise ValueError("module_not_compatible")
+    return resource
+
+
+def _module_missions_complete(player_data, resource):
+    missions = player_data["equipment"]["missions"]
+    for mission_id in resource.get("missionList") or []:
+        if mission_id not in missions:
+            return False
+        row = missions[mission_id]
+        if row["value"] < row["target"]:
+            return False
+    return True
+
+
+def _module_state(loadout, player_data, equip_id, item_ids):
+    equip = loadout["equip"]
+    return {
+        "equip": equip[equip_id].copy() if equip_id in equip else None,
+        "currentEquip": loadout["currentEquip"],
+        "gold": player_data["status"]["gold"],
+        "materials": {
+            item_id: player_data["inventory"][item_id]
+            if item_id in player_data["inventory"]
+            else 0
+            for item_id in sorted(item_ids)
+        },
+    }
+
+
 @router.post("/charBuild/upgradeChar")
 @player_data_decorator
 async def charBuild_upgradeChar(player_data, request: Request):
@@ -402,6 +552,93 @@ async def charBuild_upgradeChar(player_data, request: Request):
         costRoundingEvidence="resource_derived_proportional_ceiling_pending_live_confirmation",
     )
     return {}
+
+
+@router.post("/charBuild/boostPotential")
+@player_data_decorator
+async def charBuild_boostPotential(player_data, request: Request):
+    request_json = await request.json()
+    char_inst_id = request_json.get("charInstId")
+    item_id = request_json.get("itemId")
+    target_rank = request_json.get("targetRank")
+    if (
+        not isinstance(char_inst_id, int)
+        or isinstance(char_inst_id, bool)
+        or not isinstance(item_id, str)
+        or not item_id
+        or not isinstance(target_rank, int)
+        or isinstance(target_rank, bool)
+    ):
+        raise HTTPException(status_code=400, detail="invalid_boost_potential_request")
+
+    chars, key = player_data["troop"]["chars"], str(char_inst_id)
+    if key not in chars:
+        raise HTTPException(status_code=400, detail="character_not_found")
+    char = chars[key]
+    fingerprint = sha256(
+        json.dumps(
+            {"charInstId": char_inst_id, "itemId": item_id, "targetRank": target_rank},
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
+    journal = getattr(player_data, "extra_save", None)
+    journal_row = journal.save_obj.get("last_char_potential") if journal is not None else None
+    if (
+        journal_row is not None
+        and journal_row.get("fingerprint") == fingerprint
+        and journal_row.get("afterState") == _potential_state(char, player_data, item_id)
+    ):
+        event(
+            request,
+            "character_potential_replay_ignored",
+            charInstId=char_inst_id,
+            charId=char["charId"],
+            fingerprint=fingerprint[:16],
+        )
+        return {"resultOneSuc": 1}
+
+    try:
+        resource = _character_resource(char)
+        current_rank = int(char["potentialRank"])
+        max_rank = int(resource.get("maxPotentialLevel", len(resource.get("potentialRanks") or [])))
+        plan = _potential_item_plan(resource, item_id)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if current_rank < 0 or current_rank > max_rank:
+        raise HTTPException(status_code=400, detail="invalid_potential_rank")
+    if current_rank >= max_rank:
+        raise HTTPException(status_code=400, detail="potential_at_rank_cap")
+    if target_rank != current_rank + 1:
+        raise HTTPException(status_code=400, detail="invalid_potential_rank_transition")
+    count = plan[item_id]
+    owned = player_data["inventory"][item_id] if item_id in player_data["inventory"] else 0
+    if owned < count:
+        raise HTTPException(status_code=400, detail="insufficient_potential_item")
+
+    before = _potential_state(char, player_data, item_id)
+    player_data["inventory"][item_id] = owned - count
+    char["potentialRank"] = target_rank
+    mission_changes = reconcile_visible_missions(player_data)
+    after = _potential_state(char, player_data, item_id)
+    if journal is not None:
+        journal.save_obj["last_char_potential"] = {
+            "fingerprint": fingerprint,
+            "afterState": after,
+        }
+    event(
+        request,
+        "character_potential_boosted",
+        charInstId=char_inst_id,
+        charId=char["charId"],
+        fromRank=current_rank,
+        toRank=target_rank,
+        itemId=item_id,
+        itemCount=count,
+        before=before,
+        after=after,
+        missionChanges=mission_changes,
+    )
+    return {"resultOneSuc": 1}
 
 
 @router.post("/charBuild/evolveChar")
@@ -607,6 +844,191 @@ async def charBuild_upgradeSkill(player_data, request: Request):
     return {}
 
 
+@router.post("/charBuild/upgradeSpecialization")
+@player_data_decorator
+async def charBuild_upgradeSpecialization(player_data, request: Request):
+    request_json = await request.json()
+    char_inst_id = request_json.get("charInstId")
+    skill_index = request_json.get("skillIndex")
+    target_level = request_json.get("targetLevel")
+    if any(
+        not isinstance(value, int) or isinstance(value, bool)
+        for value in (char_inst_id, skill_index, target_level)
+    ):
+        raise HTTPException(status_code=400, detail="invalid_specialization_request")
+    chars, key = player_data["troop"]["chars"], str(char_inst_id)
+    if key not in chars:
+        raise HTTPException(status_code=400, detail="character_not_found")
+    char = chars[key]
+    fingerprint = sha256(
+        json.dumps(request_json, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    journal = getattr(player_data, "extra_save", None)
+    try:
+        slot_id, slot, room = _training_room(player_data)
+        loadout, stored_skill, definition = _specialization_skill(char, skill_index)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    journal_row = journal.save_obj.get("last_specialization_start") if journal is not None else None
+    if journal_row is not None and journal_row.get("fingerprint") == fingerprint:
+        after = journal_row.get("afterState")
+        if isinstance(after, dict) and after == _specialization_state(
+            char, player_data, set(after.get("materials", {})), slot_id, skill_index
+        ):
+            event(request, "specialization_start_replay_ignored", charInstId=char_inst_id, skillIndex=skill_index)
+            return {}
+
+    current_level = stored_skill["specializeLevel"]
+    if char["evolvePhase"] < 2 or char["mainSkillLvl"] < 7:
+        raise HTTPException(status_code=400, detail="specialization_condition_not_met")
+    if not stored_skill["unlock"]:
+        raise HTTPException(status_code=400, detail="skill_not_unlocked")
+    if current_level >= 3:
+        raise HTTPException(status_code=400, detail="specialization_at_level_cap")
+    if target_level != current_level + 1:
+        raise HTTPException(status_code=400, detail="invalid_specialization_transition")
+    levelups = definition.get("levelUpCostCond") or []
+    if current_level >= len(levelups):
+        raise HTTPException(status_code=400, detail="missing_specialization_resource")
+    row = levelups[current_level]
+    condition = row.get("unlockCond") or {}
+    try:
+        required_phase = _phase_number(condition.get("phase", "PHASE_2"))
+        required_level = int(condition.get("level", 1))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="invalid_specialization_resource") from exc
+    if char["evolvePhase"] < required_phase or (
+        char["evolvePhase"] == required_phase and char["level"] < required_level
+    ):
+        raise HTTPException(status_code=400, detail="specialization_condition_not_met")
+    room_level = int(slot["level"])
+    phases = const_json_loader[BUILDING_DATA]["trainingData"]["phases"]
+    if room_level < 1 or room_level > len(phases) or phases[room_level - 1]["specSkillLvlLimit"] < target_level:
+        raise HTTPException(status_code=400, detail="training_room_level_insufficient")
+    trainee = room["trainee"]
+    if trainee["state"] not in (0, 3) or (
+        trainee["state"] == 3 and trainee["charInstId"] not in (-1, char_inst_id)
+    ):
+        raise HTTPException(status_code=400, detail="training_room_busy")
+    building_char = player_data["building"]["chars"][key] if key in player_data["building"]["chars"] else None
+    if building_char is None:
+        raise HTTPException(status_code=400, detail="building_character_missing")
+    occupied_slot = building_char["roomSlotId"]
+    if occupied_slot not in ("", slot_id):
+        raise HTTPException(status_code=400, detail="training_operator_assigned_elsewhere")
+    try:
+        duration = int(row.get("lvlUpTime"))
+        if duration <= 0:
+            raise ValueError
+        plan = _cost_plan(player_data, row.get("levelUpCost"), 0)
+    except (TypeError, ValueError) as exc:
+        detail = str(exc) if str(exc) else "invalid_specialization_resource"
+        raise HTTPException(status_code=400, detail=detail) from exc
+
+    item_ids = set(plan["items"])
+    before = _specialization_state(char, player_data, item_ids, slot_id, skill_index)
+    now = int(faketime())
+    complete_time = now + duration
+    _apply_cost_plan(player_data, plan)
+    _set_specialization_skill_field(loadout, skill_index, "completeUpgradeTime", complete_time)
+    room["state"] = 1
+    room["lastUpdateTime"] = now
+    room["completeWorkTime"] = complete_time
+    room["trainee"] = {
+        "charInstId": char_inst_id,
+        "state": 1,
+        "targetSkill": skill_index,
+        "processPoint": 0,
+        "speed": 1,
+    }
+    slot_ids = slot["charInstIds"].copy()
+    while len(slot_ids) < 2:
+        slot_ids.append(-1)
+    slot_ids[1] = char_inst_id
+    slot["charInstIds"] = slot_ids
+    building_char["roomSlotId"] = slot_id
+    building_char["index"] = 1
+    after = _specialization_state(char, player_data, item_ids, slot_id, skill_index)
+    if journal is not None:
+        journal.save_obj["last_specialization_start"] = {
+            "fingerprint": fingerprint,
+            "afterState": after,
+            "slotId": slot_id,
+        }
+    event(
+        request,
+        "specialization_started",
+        charInstId=char_inst_id,
+        charId=char["charId"],
+        skillIndex=skill_index,
+        fromLevel=current_level,
+        targetLevel=target_level,
+        roomSlotId=slot_id,
+        roomLevel=room_level,
+        duration=duration,
+        completeUpgradeTime=complete_time,
+        materialCosts=[{"id": item_id, "count": count} for item_id, count in plan["items"].items()],
+        goldCost=plan["gold"],
+        before=before,
+        after=after,
+    )
+    return {}
+
+
+@router.post("/charBuild/completeUpgradeSpecialization")
+@player_data_decorator
+async def charBuild_completeUpgradeSpecialization(player_data, request: Request):
+    await request.json()
+    journal = getattr(player_data, "extra_save", None)
+    try:
+        slot_id, slot, room = _training_room(player_data)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    trainee = room["trainee"]
+    char_inst_id = trainee["charInstId"]
+    skill_index = trainee["targetSkill"]
+    if trainee["state"] != 1 or char_inst_id < 0 or skill_index < 0:
+        last = journal.save_obj.get("last_specialization_complete") if journal is not None else None
+        if last is not None:
+            event(request, "specialization_complete_replay_ignored", **last["identity"])
+            return {}
+        raise HTTPException(status_code=400, detail="no_specialization_in_progress")
+    key = str(char_inst_id)
+    if key not in player_data["troop"]["chars"]:
+        raise HTTPException(status_code=400, detail="specialization_character_missing")
+    char = player_data["troop"]["chars"][key]
+    try:
+        loadout, stored_skill, _ = _specialization_skill(char, skill_index)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    complete_time = int(stored_skill["completeUpgradeTime"])
+    now = int(faketime())
+    if complete_time < 0 or now < complete_time:
+        raise HTTPException(status_code=400, detail="specialization_not_complete")
+    current_level = int(stored_skill["specializeLevel"])
+    target_level = current_level + 1
+    if target_level > 3:
+        raise HTTPException(status_code=400, detail="specialization_at_level_cap")
+
+    _set_specialization_skill_field(loadout, skill_index, "specializeLevel", target_level)
+    _set_specialization_skill_field(loadout, skill_index, "completeUpgradeTime", -1)
+    room["state"] = 0
+    room["lastUpdateTime"] = now
+    room["completeWorkTime"] = -1
+    room["trainee"] = {
+        "charInstId": char_inst_id,
+        "state": 3,
+        "targetSkill": skill_index,
+        "processPoint": -1,
+        "speed": 1,
+    }
+    identity = {"charInstId": char_inst_id, "charId": char["charId"], "skillIndex": skill_index, "targetLevel": target_level}
+    if journal is not None:
+        journal.save_obj["last_specialization_complete"] = {"identity": identity}
+    event(request, "specialization_completed", roomSlotId=slot_id, **identity)
+    return {}
+
+
 @router.post("/charBuild/setDefaultSkill")
 @player_data_decorator
 async def charBuild_setDefaultSkill(player_data, request: Request):
@@ -636,23 +1058,122 @@ async def charBuild_setDefaultSkill(player_data, request: Request):
 @player_data_decorator
 async def charBuild_setEquipment(player_data, request: Request):
     request_json = await request.json()
+    char_inst_id = request_json.get("charInstId")
+    template_id = request_json.get("templateId")
+    equip_id = request_json.get("equipId")
+    if not isinstance(char_inst_id, int) or isinstance(char_inst_id, bool) or equip_id is not None and not isinstance(equip_id, str):
+        raise HTTPException(status_code=400, detail="invalid_set_equipment_request")
+    chars, key = player_data["troop"]["chars"], str(char_inst_id)
+    if key not in chars:
+        raise HTTPException(status_code=400, detail="character_not_found")
+    char = chars[key]
+    try:
+        loadout, normalized_template = _module_loadout(char, template_id)
+        if equip_id:
+            _module_resource(char, normalized_template, equip_id)
+            if equip_id not in loadout["equip"] or loadout["equip"][equip_id]["locked"] or loadout["equip"][equip_id]["level"] < 1:
+                raise ValueError("module_not_unlocked")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    loadout["currentEquip"] = equip_id or None
+    event(request, "module_equipment_changed", charInstId=char_inst_id, charId=char["charId"], templateId=normalized_template, equipId=equip_id or None)
+    return {}
 
-    char_num_id = request_json["charInstId"]
-    equip_id = request_json["equipId"]
 
-    if (
-        "currentTmpl" in player_data["troop"]["chars"][str(char_num_id)]
-        and player_data["troop"]["chars"][str(char_num_id)]["currentTmpl"] is not None
-    ):
-        tmpl_id = player_data["troop"]["chars"][str(char_num_id)]["currentTmpl"]
-        player_data["troop"]["chars"][str(char_num_id)]["tmpl"][tmpl_id][
-            "currentEquip"
-        ] = equip_id
-    else:
-        player_data["troop"]["chars"][str(char_num_id)]["currentEquip"] = equip_id
+@router.post("/charBuild/unlockEquipment")
+@player_data_decorator
+async def charBuild_unlockEquipment(player_data, request: Request):
+    request_json = await request.json()
+    char_inst_id = request_json.get("charInstId")
+    template_id = request_json.get("templateId")
+    equip_id = request_json.get("equipId")
+    if not isinstance(char_inst_id, int) or isinstance(char_inst_id, bool) or not isinstance(equip_id, str):
+        raise HTTPException(status_code=400, detail="invalid_unlock_equipment_request")
+    chars, key = player_data["troop"]["chars"], str(char_inst_id)
+    if key not in chars:
+        raise HTTPException(status_code=400, detail="character_not_found")
+    char = chars[key]
+    try:
+        loadout, normalized_template = _module_loadout(char, template_id)
+        resource = _module_resource(char, normalized_template, equip_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if resource.get("type") != "ADVANCED":
+        raise HTTPException(status_code=400, detail="module_does_not_use_unlock_flow")
+    if equip_id in loadout["equip"] and not loadout["equip"][equip_id]["locked"]:
+        raise HTTPException(status_code=400, detail="module_already_unlocked")
+    try:
+        required_phase = _phase_number(resource.get("unlockEvolvePhase"))
+        required_level = int(resource.get("unlockLevel", 0))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="invalid_module_resource") from exc
+    if char["evolvePhase"] < required_phase or char["evolvePhase"] == required_phase and char["level"] < required_level:
+        raise HTTPException(status_code=400, detail="module_level_condition_not_met")
+    favor_required = int((resource.get("unlockFavors") or {}).get("1", 0))
+    if char["favorPoint"] < favor_required:
+        raise HTTPException(status_code=400, detail="module_favor_condition_not_met")
+    if not _module_missions_complete(player_data, resource):
+        raise HTTPException(status_code=400, detail="module_missions_incomplete")
+    costs = (resource.get("itemCost") or {}).get("1")
+    try:
+        plan = _cost_plan(player_data, costs, 0)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    before = _module_state(loadout, player_data, equip_id, set(plan["items"]))
+    _apply_cost_plan(player_data, plan)
+    equips = loadout["equip"].copy()
+    equips[equip_id] = {"hide": 0, "locked": 0, "level": 1}
+    loadout["equip"] = equips
+    after = _module_state(loadout, player_data, equip_id, set(plan["items"]))
+    event(request, "module_unlocked", charInstId=char_inst_id, charId=char["charId"], templateId=normalized_template, equipId=equip_id, before=before, after=after)
+    return {}
 
-    response = {}
-    return response
+
+@router.post("/charBuild/upgradeEquipment")
+@player_data_decorator
+async def charBuild_upgradeEquipment(player_data, request: Request):
+    request_json = await request.json()
+    char_inst_id = request_json.get("charInstId")
+    template_id = request_json.get("templateId")
+    equip_id = request_json.get("equipId")
+    target_level = request_json.get("targetLevel")
+    if not isinstance(char_inst_id, int) or isinstance(char_inst_id, bool) or not isinstance(equip_id, str) or not isinstance(target_level, int) or isinstance(target_level, bool):
+        raise HTTPException(status_code=400, detail="invalid_upgrade_equipment_request")
+    chars, key = player_data["troop"]["chars"], str(char_inst_id)
+    if key not in chars:
+        raise HTTPException(status_code=400, detail="character_not_found")
+    char = chars[key]
+    try:
+        loadout, normalized_template = _module_loadout(char, template_id)
+        resource = _module_resource(char, normalized_template, equip_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if equip_id not in loadout["equip"] or loadout["equip"][equip_id]["locked"]:
+        raise HTTPException(status_code=400, detail="module_not_unlocked")
+    current_level = int(loadout["equip"][equip_id]["level"])
+    costs_by_level = resource.get("itemCost") or {}
+    max_level = max((int(level) for level in costs_by_level), default=0)
+    if current_level >= max_level:
+        raise HTTPException(status_code=400, detail="module_at_level_cap")
+    if target_level != current_level + 1:
+        raise HTTPException(status_code=400, detail="invalid_module_level_transition")
+    favor_required = int((resource.get("unlockFavors") or {}).get(str(target_level), 0))
+    if char["favorPoint"] < favor_required:
+        raise HTTPException(status_code=400, detail="module_favor_condition_not_met")
+    try:
+        plan = _cost_plan(player_data, costs_by_level.get(str(target_level)), 0)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    before = _module_state(loadout, player_data, equip_id, set(plan["items"]))
+    _apply_cost_plan(player_data, plan)
+    equips = loadout["equip"].copy()
+    equip = equips[equip_id].copy()
+    equip["level"] = target_level
+    equips[equip_id] = equip
+    loadout["equip"] = equips
+    after = _module_state(loadout, player_data, equip_id, set(plan["items"]))
+    event(request, "module_upgraded", charInstId=char_inst_id, charId=char["charId"], templateId=normalized_template, equipId=equip_id, fromLevel=current_level, toLevel=target_level, before=before, after=after)
+    return {}
 
 
 @router.post("/charBuild/setCharVoiceLan")
@@ -739,26 +1260,28 @@ async def charBuild_changeCharTemplate(player_data, request: Request):
 @player_data_decorator
 async def charBuild_addonStage_battleStart(player_data, request: Request):
     request_json = await request.json()
-
-    response = {
-        "result": 0,
-        "battleId": "00000000-0000-0000-0000-000000000000",
-    }
-    return response
+    event(
+        request,
+        "charbuild_addon_stage_rejected",
+        stageId=request_json.get("stageId"),
+        charId=request_json.get("charId"),
+        reason="addon_stage_settlement_not_verified",
+    )
+    raise HTTPException(status_code=400, detail="addon_stage_settlement_not_verified")
 
 
 @router.post("/charBuild/addonStage/battleFinish")
 @player_data_decorator
 async def charBuild_addonStage_battleFinish(player_data, request: Request):
     request_json = await request.json()
-
-    log_battle_log_if_necessary(player_data, request_json["data"])
-
-    response = {
-        "result": 0,
-        "firstRewards": [],
-    }
-    return response
+    if "data" in request_json:
+        log_battle_log_if_necessary(player_data, request_json["data"])
+    event(
+        request,
+        "charbuild_addon_stage_rejected",
+        reason="addon_stage_settlement_not_verified",
+    )
+    raise HTTPException(status_code=400, detail="addon_stage_settlement_not_verified")
 
 
 @router.post("/charBuild/changeSkinSpState")
