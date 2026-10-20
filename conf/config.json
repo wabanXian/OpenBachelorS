@@ -10,7 +10,7 @@
     "debug": true,
     "http_trace": {
         "enabled": true,
-        "paths": ["/quest/", "/account/"],
+        "paths": ["/quest/", "/account/", "/charBuild/"],
         "max_body_bytes": 65536,
         "max_log_chars": 12000
     },

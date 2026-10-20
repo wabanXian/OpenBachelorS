@@ -20,7 +20,7 @@ logger = logging.getLogger("openbachelors.http_trace")
 
 DEFAULT_MAX_BODY_BYTES = 65536
 DEFAULT_MAX_LOG_CHARS = 12000
-DEFAULT_PATHS = ("/quest/", "/account/")
+DEFAULT_PATHS = ("/quest/", "/account/", "/charBuild/")
 SENSITIVE_KEY_PARTS = (
     "authorization", "cookie", "credential", "password", "secret", "session", "token",
     "api_key", "apikey",

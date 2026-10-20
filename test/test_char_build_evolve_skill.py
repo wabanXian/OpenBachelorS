@@ -22,6 +22,9 @@ class FakeExtra:
     def __init__(self, save_obj=None):
         self.save_obj = save_obj if save_obj is not None else {}
 
+    async def save(self):
+        return None
+
 
 def make_player(delta=None, extra=None):
     player = OverlayJson(post_tutorial_player_data_template, delta or DeltaJson())

@@ -29,6 +29,10 @@ from ..util.faketime import faketime
 
 router = APIRouter()
 
+# PC 2.7.81 CharacterInfoPotentialState.<_ItemRequest>b__19_0 compares the
+# Int32 response field to exactly 1 before passing true to the success panel.
+POTENTIAL_RESULT_SUCCESS = 1
+
 
 def _exp_item_values():
     # expItems is the authoritative item -> EXP mapping shipped by the client.
@@ -595,7 +599,7 @@ async def charBuild_boostPotential(player_data, request: Request):
             charId=char["charId"],
             fingerprint=fingerprint[:16],
         )
-        return {"resultOneSuc": 1}
+        return {"resultOneSuc": POTENTIAL_RESULT_SUCCESS}
 
     try:
         resource = _character_resource(char)
@@ -638,7 +642,7 @@ async def charBuild_boostPotential(player_data, request: Request):
         after=after,
         missionChanges=mission_changes,
     )
-    return {"resultOneSuc": 1}
+    return {"resultOneSuc": POTENTIAL_RESULT_SUCCESS}
 
 
 @router.post("/charBuild/evolveChar")

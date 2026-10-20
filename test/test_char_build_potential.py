@@ -1,14 +1,41 @@
+import json
+import time
+
 import pytest
 from fastapi import HTTPException
 
 from openbachelors.bp.bp_charBuild import charBuild_boostPotential, router
-from openbachelors.util.player_data import DeltaJson
+import openbachelors.util.player_data as player_data_module
+from openbachelors.util.player_data import (
+    DeltaJson,
+    OverlayJson,
+    PlayerData,
+    post_tutorial_player_data_template,
+)
 
 from .test_char_build_evolve_skill import (
+    FakeExtra,
     add_normalised_char,
     make_player,
     make_request,
 )
+
+
+def decorated_player():
+    class SavableDelta(DeltaJson):
+        async def save(self):
+            return None
+
+    saved, pending = SavableDelta(), SavableDelta()
+    base = OverlayJson(post_tutorial_player_data_template, saved)
+    player = PlayerData(base, pending)
+    player.save_aggregator = None
+    player.sav_delta_json = saved
+    player.sav_pending_delta_json = pending
+    player.extra_save = FakeExtra({"last_message_ts": time.time()})
+    player.json_with_delta = base
+    player.preset = "post_tutorial"
+    return player
 
 
 def potential_request(char_inst_id, item_id, target_rank):
@@ -41,6 +68,30 @@ async def test_exclusive_token_boosts_one_rank_and_persists():
     reloaded = make_player(delta, extra)
     assert reloaded["troop"]["chars"]["999"]["potentialRank"] == 1
     assert reloaded["inventory"]["p_char_208_melan"] == 1
+
+
+@pytest.mark.asyncio
+async def test_http_response_uses_pc_success_value_and_contains_complete_delta(monkeypatch):
+    player = decorated_player()
+    char = add_normalised_char(player, "char_208_melan")
+    player["inventory"]["p_char_208_melan"] = 1
+
+    async def create_player(cls, *args, **kwargs):
+        return player
+
+    monkeypatch.setattr(player_data_module.PlayerData, "create", classmethod(create_player))
+    response = await charBuild_boostPotential(
+        request=potential_request(999, "p_char_208_melan", 1)
+    )
+    payload = json.loads(response.body)
+
+    # PC 2.7.81 callback compares resultOneSuc to exactly 1 before showing
+    # CharacterInfoPotentialNotifyView's success panel.
+    assert payload["resultOneSuc"] == 1
+    modified = payload["playerDataDelta"]["modified"]
+    assert modified["troop"]["chars"]["999"]["potentialRank"] == 1
+    assert modified["inventory"]["p_char_208_melan"] == 0
+    assert char["potentialRank"] == 1
 
 
 @pytest.mark.asyncio

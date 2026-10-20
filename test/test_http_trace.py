@@ -82,6 +82,12 @@ async def test_http_trace_preserves_asgi_io_and_logs_payloads():
     assert "status=200" in lines
 
 
+def test_charbuild_is_in_the_default_trace_scope():
+    from openbachelors.util.http_trace import DEFAULT_PATHS
+
+    assert "/charBuild/" in DEFAULT_PATHS
+
+
 @pytest.mark.asyncio
 async def test_http_trace_suppresses_complete_sync_data_response():
     response = json.dumps({"user": {"large": "x" * 1000}}).encode()
