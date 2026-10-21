@@ -72,7 +72,8 @@ def reconcile_interrupted_clean_tutorial(player_data):
 def _next_trade_order_inst_id(player_data):
     highest = 0
     for room in player_data["building"]["rooms"]["TRADING"].copy().values():
-        for order in room.get("stock", []):
+        stored = room.get("stock", [])
+        for order in (stored.copy() if hasattr(stored, "copy") else stored):
             if isinstance(order, dict) and type(order.get("instId")) is int:
                 highest = max(highest, order["instId"])
     return highest + 1

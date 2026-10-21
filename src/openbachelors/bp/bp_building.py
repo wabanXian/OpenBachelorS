@@ -12,6 +12,10 @@ from ..util.building_state import (
     deliver_trade_order,
     validate_building_structure,
 )
+from ..util.building_economy import (
+    accelerate, collect_manufacture, settle_building_economy,
+    settle_manufacture_room, settle_trading_room,
+)
 from ..util.tutorial_debug import event
 from ..util.mission_lifecycle import update_has_room_missions
 from ..util.mission_lifecycle import apply_mission_event
@@ -23,6 +27,7 @@ router = APIRouter()
 @player_data_decorator
 async def building_sync(player_data, request: Request):
     request_json = await request.json()
+    economy = settle_building_economy(player_data)
     labor = player_data["building"]["status"]["labor"]
     structure_issues = validate_building_structure(player_data)
     event(
@@ -36,6 +41,7 @@ async def building_sync(player_data, request: Request):
         labor={"value": labor.copy().get("value"), "maxValue": labor.copy().get("maxValue")},
         structureValid=not structure_issues,
         structureIssues=structure_issues,
+        economy=economy,
     )
     response = {"ts": __import__("time").time_ns() // 1_000_000_000}
     return response
@@ -166,6 +172,11 @@ async def building_changeManufactureSolution(player_data, request: Request):
             roomSlotId=slot_id,
             formulaId=formula_id,
         )
+    slot = player_data["building"]["roomSlots"][slot_id].copy()
+    requirements = formula.get("requireRooms", [])
+    if not any(x.get("roomId") == "MANUFACTURE" and int(slot.get("level", 0)) >= int(x.get("roomLevel", 99)) for x in requirements):
+        return _building_error(request, "changeManufactureSolution", BuildingRuleError("manufacture_formula_locked"), roomSlotId=slot_id, formulaId=formula_id)
+    settle_manufacture_room(player_data, slot_id)
     room["state"] = 1
     room["formulaId"] = formula_id
     room["remainSolutionCnt"] = solution_count
@@ -179,6 +190,36 @@ async def building_changeManufactureSolution(player_data, request: Request):
         formulaId=formula_id,
         solutionCount=solution_count,
     )
+    return {"result": 0}
+
+
+@router.post("/building/settleManufacture")
+@player_data_decorator
+async def building_settleManufacture(player_data, request: Request):
+    body = await request.json()
+    slots = body.get("roomSlotIdList")
+    if not isinstance(slots, list) or any(not isinstance(x, str) for x in slots):
+        return _building_error(request, "settleManufacture", BuildingRuleError("invalid_room_slot_list"))
+    try: rewards = collect_manufacture(player_data, slots)
+    except BuildingRuleError as exc: return _building_error(request, "settleManufacture", exc)
+    return {"supplement": int(body.get("supplement", 0)), "rewards": rewards}
+
+
+@router.post("/building/accelerateSolution")
+@player_data_decorator
+async def building_accelerateSolution(player_data, request: Request):
+    body = await request.json()
+    try: accelerate(player_data, "MANUFACTURE", body.get("slotId"), body.get("cost"))
+    except BuildingRuleError as exc: return _building_error(request, "accelerateSolution", exc)
+    return {}
+
+
+@router.post("/building/accelerateOrder")
+@player_data_decorator
+async def building_accelerateOrder(player_data, request: Request):
+    body = await request.json()
+    try: accelerate(player_data, "TRADING", body.get("slotId"), body.get("cost"))
+    except BuildingRuleError as exc: return _building_error(request, "accelerateOrder", exc)
     return {"result": 0}
 
 
@@ -218,6 +259,8 @@ async def building_deliveryOrder(player_data, request: Request):
     request_json = await request.json()
     slot_id = request_json.get("slotId")
     order_id = request_json.get("orderId")
+    try: settle_trading_room(player_data, slot_id)
+    except BuildingRuleError as exc: return _building_error(request, "deliveryOrder", exc)
     try:
         result = deliver_trade_order(player_data, slot_id, order_id)
     except BuildingRuleError as exc:
@@ -240,6 +283,7 @@ async def building_deliveryOrder(player_data, request: Request):
         "delivery_order",
         {"count": 1, "roomSlotId": slot_id, "orderId": order_id},
     )
+    settle_trading_room(player_data, slot_id)
     return {"result": 0}
 
 
