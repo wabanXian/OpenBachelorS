@@ -16,16 +16,16 @@ perfect loot distributions or base-production skill efficiency.
 
 ## Current evidence and limitation
 
-- \`res/excel/activity_table.json\` includes \`basicInfo\` activity IDs and
+- `res/excel/activity_table.json` includes `basicInfo` activity IDs and
   event timestamps, plus state grouped by activity type.
-- \`res/excel/gacha_table.json\` includes \`gachaPoolClient\` (pool ID,
+- `res/excel/gacha_table.json` includes `gachaPoolClient` (pool ID,
   opening/closing timestamps, rules, client descriptions).
-- \`bp_gacha.py\` has separate advanced-gacha rule managers and character grant
+- `bp_gacha.py` has separate advanced-gacha rule managers and character grant
   logic. This does **not** by itself prove banner display or currency
   consumption is correct for historical/normal accounts.
-- \`post_tutorial\` is the fresh account preset. \`sandbox\` is an all-open
+- `post_tutorial` is the fresh account preset. `sandbox` is an all-open
   template, not evidence of a legitimate event unlock protocol.
-- Server \`faketime\` is a process-wide override; it is not a per-account
+- Server `faketime` is a process-wide override; it is not a per-account
   release selector, and a server-only clock change is not evidence the PC
   client will show a historical banner.
 
@@ -38,12 +38,12 @@ multiple phases, reruns or banners.
 
 From the server repository root:
 
-\`\`\`powershell
+```powershell
 uv run python -m openbachelors.tool.activity_gacha_audit
 uv run pytest -q test/test_activity_gacha_audit.py
-\`\`\`
+```
 
-Output: \`data/activity_gacha_audit.json\` (not a runtime selector).
+Output: `data/activity_gacha_audit.json` (not a runtime selector).
 
 The report identifies:
 
@@ -80,7 +80,7 @@ on an isolated account:
 
 Implement the selector **per isolated account**, with explicit backup/restore,
 known pool IDs, stable persistence, and no automatic full-account opening.
-Do not change \`post_tutorial\` defaults, \`sandbox\` semantics or live accounts.
+Do not change `post_tutorial` defaults, `sandbox` semantics or live accounts.
 Do not add a global clock override merely to make one archive appear.
 
 ## Acceptance conditions
