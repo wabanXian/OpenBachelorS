@@ -103,3 +103,32 @@ def test_batch_delivery_settles_all_orders_and_old_ids_stay_dead():
     assert player["building"]["rooms"]["TRADING"]["slot_24"]["stock"].copy() == []
     settle_trading_room(player, "slot_24", 1000 + 8640 * 3)
     assert player["building"]["rooms"]["TRADING"]["slot_24"]["stock"].copy()[0]["instId"] > max(ids)
+
+
+def test_batch_delivery_with_no_affordable_order_returns_slot_with_empty_rewards():
+    player = economy_player()
+    player["inventory"]["3003"] = 1
+    settle_trading_room(player, "slot_24", 1000 + 8640 * 2)
+    stock_before = player["building"]["rooms"]["TRADING"]["slot_24"]["stock"].copy()
+    gold_before = player["status"]["gold"]
+
+    delivered = deliver_trade_orders_batch(player, ["slot_24"])
+
+    assert delivered == {"slot_24": []}
+    assert player["building"]["rooms"]["TRADING"]["slot_24"]["stock"].copy() == stock_before
+    assert player["inventory"]["3003"] == 1
+    assert player["status"]["gold"] == gold_before
+
+
+def test_batch_delivery_delivers_affordable_prefix_and_leaves_other_orders():
+    player = economy_player()
+    player["inventory"]["3003"] = 3
+    settle_trading_room(player, "slot_24", 1000 + 8640 * 2)
+    gold_before = player["status"]["gold"]
+
+    delivered = deliver_trade_orders_batch(player, ["slot_24"])
+
+    assert len(delivered["slot_24"]) == 1
+    assert len(player["building"]["rooms"]["TRADING"]["slot_24"]["stock"].copy()) == 1
+    assert player["inventory"]["3003"] == 1
+    assert player["status"]["gold"] == gold_before + 1000

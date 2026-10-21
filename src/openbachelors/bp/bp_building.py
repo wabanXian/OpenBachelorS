@@ -305,7 +305,16 @@ async def building_deliveryBatchOrder(player_data, request: Request):
         for slot_id in slot_ids:
             settle_trading_room(player_data, slot_id)
     except BuildingRuleError as exc:
-        return _building_error(request, "deliveryBatchOrder", exc)
+        # BuildingDeliveryBatchOrderResponse.delivered is dereferenced directly
+        # by the PC client.  Preserve that response shape even for rejected
+        # requests instead of returning the generic building error payload.
+        _building_error(request, "deliveryBatchOrder", exc)
+        valid_slot_ids = slot_ids if isinstance(slot_ids, list) else []
+        return {
+            "delivered": {
+                slot_id: [] for slot_id in valid_slot_ids if isinstance(slot_id, str)
+            }
+        }
     apply_mission_event(player_data, "delivery_order", {"count": sum(len(items) for items in delivered.values())})
     return {"delivered": delivered}
 

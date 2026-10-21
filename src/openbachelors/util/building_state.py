@@ -228,7 +228,9 @@ def deliver_trade_order(player_data, slot_id, order_id):
 def deliver_trade_orders_batch(player_data, slot_ids):
     if not isinstance(slot_ids, list) or any(not isinstance(value, str) for value in slot_ids):
         raise BuildingRuleError("invalid_trade_slot_list")
-    plans, totals = [], {}
+    plans = []
+    remaining = {}
+    delivered = {slot_id: [] for slot_id in slot_ids}
     for slot_id in slot_ids:
         room = player_data["building"]["rooms"]["TRADING"].copy().get(slot_id)
         if not isinstance(room, dict):
@@ -236,16 +238,24 @@ def deliver_trade_orders_batch(player_data, slot_ids):
         stock = room.get("stock", [])
         stock = stock.copy() if hasattr(stock, "copy") else stock
         for order in stock:
-            for item in order.get("delivery", []):
-                totals[item["id"]] = totals.get(item["id"], 0) + int(item["count"])
+            costs = order.get("delivery", [])
+            affordable = True
+            for item in costs:
+                item_id = item["id"]
+                available = remaining.setdefault(
+                    item_id, _inventory_count(player_data, item_id)
+                )
+                if available < int(item["count"]):
+                    affordable = False
+                    break
+            if not affordable:
+                continue
+            for item in costs:
+                remaining[item["id"]] -= int(item["count"])
             plans.append((slot_id, int(order["instId"]), deepcopy(order["gain"])))
-    for item_id, count in totals.items():
-        if _inventory_count(player_data, item_id) < count:
-            raise BuildingRuleError(f"insufficient_item:{item_id}")
-    delivered = {}
     for slot_id, order_id, gain in plans:
         deliver_trade_order(player_data, slot_id, order_id)
-        delivered.setdefault(slot_id, []).append(gain)
+        delivered[slot_id].append(gain)
     return delivered
 
 
