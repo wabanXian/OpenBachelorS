@@ -6,6 +6,7 @@ from openbachelors.util.building_economy import (
     settle_manufacture_room,
     settle_trading_room,
 )
+from openbachelors.util.building_state import deliver_trade_order
 
 from .test_building_tutorial import prepare_part11_player
 
@@ -72,3 +73,21 @@ def test_multi_room_settlement_is_repeatable_at_same_timestamp():
     assert second["manufacture"]["slot_25"] == 0
     assert second["trading"]["slot_24"] == 0
     assert player["building"].copy() == snapshot
+
+
+def test_trade_order_ids_are_never_reused_after_stock_becomes_empty():
+    player = economy_player()
+    player["inventory"]["3003"] = 20
+    settle_trading_room(player, "slot_24", 9640)
+    first_id = player["building"]["rooms"]["TRADING"]["slot_24"]["stock"].copy()[0]["instId"]
+    deliver_trade_order(player, "slot_24", first_id)
+    assert player["building"]["rooms"]["TRADING"]["slot_24"]["stock"].copy() == []
+    settle_trading_room(player, "slot_24", 18280)
+    second_id = player["building"]["rooms"]["TRADING"]["slot_24"]["stock"].copy()[0]["instId"]
+    assert second_id > first_id
+    try:
+        deliver_trade_order(player, "slot_24", first_id)
+    except Exception as exc:
+        assert "trade_order_not_found" in str(exc)
+    else:
+        raise AssertionError("old delivery request matched a new order")

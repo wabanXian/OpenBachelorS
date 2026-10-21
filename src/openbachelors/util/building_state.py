@@ -70,13 +70,22 @@ def reconcile_interrupted_clean_tutorial(player_data):
 
 
 def _next_trade_order_inst_id(player_data):
-    highest = 0
+    status = player_data["building"]["status"]
+    highest = int(status.copy().get("tradeOrderSerial", 0))
+    if player_data["status"]["flags"].copy().get(TUTORIAL_TRADE_NEXT_STORY):
+        highest = max(highest, 1)
     for room in player_data["building"]["rooms"]["TRADING"].copy().values():
         stored = room.get("stock", [])
         for order in (stored.copy() if hasattr(stored, "copy") else stored):
             if isinstance(order, dict) and type(order.get("instId")) is int:
                 highest = max(highest, order["instId"])
     return highest + 1
+
+
+def allocate_trade_order_inst_id(player_data):
+    value = _next_trade_order_inst_id(player_data)
+    player_data["building"]["status"]["tradeOrderSerial"] = value
+    return value
 
 
 def tutorial_trade_readiness(player_data):
@@ -131,7 +140,7 @@ def ensure_tutorial_first_trade_order(player_data):
         "delivery": [{"type": "MATERIAL", "id": "3003", "count": 2}],
         "gain": {"type": "GOLD", "id": "4001", "count": 1000},
         "buff": [],
-        "instId": _next_trade_order_inst_id(player_data),
+        "instId": allocate_trade_order_inst_id(player_data),
         "isViolated": 0,
         "specGoldTag": {"activated": 0, "from": None},
     }

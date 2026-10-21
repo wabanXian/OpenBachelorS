@@ -3,7 +3,7 @@
 from copy import deepcopy
 
 from ..const.filepath import BUILDING_DATA
-from .building_state import BuildingRuleError, _next_trade_order_inst_id
+from .building_state import BuildingRuleError, allocate_trade_order_inst_id
 from .const_json_loader import const_json_loader
 from .faketime import faketime
 
@@ -91,7 +91,7 @@ def collect_manufacture(player_data, slot_ids, now=None):
 def _gold_order(player_data, inst_id=None):
     return {"type": "O_GOLD", "delivery": [{"type": "MATERIAL", "id": "3003", "count": 2}],
             "gain": {"type": "GOLD", "id": "4001", "count": 1000}, "buff": [],
-            "instId": _next_trade_order_inst_id(player_data) if inst_id is None else inst_id, "isViolated": 0,
+            "instId": allocate_trade_order_inst_id(player_data) if inst_id is None else inst_id, "isViolated": 0,
             "specGoldTag": {"activated": 0, "from": None}}
 
 
@@ -112,9 +112,8 @@ def settle_trading_room(player_data, slot_id, now=None, bonus_seconds=0):
     point = float((room.copy().get("next") or {}).get("processPoint", 0)) + max(0, now-last) + max(0, int(bonus_seconds))
     duration = 8640  # PC base mechanics: level-1 two-gold order, before buffs.
     made = 0
-    next_id = _next_trade_order_inst_id(player_data)
     while point >= duration and len(stock) < int(room.copy().get("stockLimit", 0)):
-        stock.append(_gold_order(player_data, next_id)); next_id += 1; point -= duration; made += 1
+        stock.append(_gold_order(player_data)); point -= duration; made += 1
     if len(stock) >= int(room.copy().get("stockLimit", 0)):
         point = 0
     room["stock"] = stock

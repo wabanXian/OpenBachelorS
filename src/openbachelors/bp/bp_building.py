@@ -16,6 +16,7 @@ from ..util.building_economy import (
     accelerate, collect_manufacture, settle_building_economy,
     settle_manufacture_room, settle_trading_room,
 )
+from ..util.building_staff import settle_building_staff
 from ..util.tutorial_debug import event
 from ..util.mission_lifecycle import update_has_room_missions
 from ..util.mission_lifecycle import apply_mission_event
@@ -27,6 +28,7 @@ router = APIRouter()
 @player_data_decorator
 async def building_sync(player_data, request: Request):
     request_json = await request.json()
+    staff = settle_building_staff(player_data)
     economy = settle_building_economy(player_data)
     labor = player_data["building"]["status"]["labor"]
     structure_issues = validate_building_structure(player_data)
@@ -42,6 +44,7 @@ async def building_sync(player_data, request: Request):
         structureValid=not structure_issues,
         structureIssues=structure_issues,
         economy=economy,
+        staff=staff,
     )
     response = {"ts": __import__("time").time_ns() // 1_000_000_000}
     return response
@@ -368,11 +371,15 @@ async def building_assignChar(player_data, request: Request):
 
     room_id = request_json["roomSlotId"]
     char_num_id_lst = request_json["charInstIdList"]
+    if not isinstance(char_num_id_lst, list) or any(type(value) is not int for value in char_num_id_lst):
+        return _building_error(request, "assignChar", BuildingRuleError("invalid_room_assignment"), roomSlotId=room_id)
     if room_id not in player_data["building"]["roomSlots"]:
         return _building_error(
             request, "assignChar", BuildingRuleError("unknown_room_slot"), roomSlotId=room_id
         )
     slot_snapshot = player_data["building"]["roomSlots"][room_id].copy()
+    if int(slot_snapshot.get("level", 0)) < 1 or int(slot_snapshot.get("state", 0)) != 2:
+        return _building_error(request, "assignChar", BuildingRuleError("room_not_ready"), roomSlotId=room_id)
     training_room = None
     if slot_snapshot.get("roomId") == "TRAINING":
         training_rooms = player_data["building"]["rooms"]["TRAINING"]
@@ -381,10 +388,11 @@ async def building_assignChar(player_data, request: Request):
     expected_slots = len(slot_snapshot.get("charInstIds", []))
     assigned = [value for value in char_num_id_lst if value != -1]
     known_chars = player_data["building"]["chars"].copy()
+    owned_chars = player_data["troop"]["chars"].copy()
     if (
         len(char_num_id_lst) != expected_slots
         or len(assigned) != len(set(assigned))
-        or any(str(value) not in known_chars for value in assigned)
+        or any(str(value) not in known_chars or str(value) not in owned_chars for value in assigned)
     ):
         return _building_error(
             request,
@@ -405,6 +413,22 @@ async def building_assignChar(player_data, request: Request):
                 BuildingRuleError("training_room_busy"),
                 roomSlotId=room_id,
             )
+
+    # Validate every source before settling or mutating any assignment.
+    for char_num_id in assigned:
+        building_char = known_chars[str(char_num_id)]
+        src_room_id = building_char.get("roomSlotId", "")
+        if not src_room_id or src_room_id == room_id:
+            continue
+        src_slot = player_data["building"]["roomSlots"].copy().get(src_room_id, {})
+        if src_slot.get("roomId") == "TRAINING":
+            src_runtime = player_data["building"]["rooms"]["TRAINING"].copy().get(src_room_id, {})
+            trainee = src_runtime.get("trainee", {})
+            if trainee.get("charInstId") == char_num_id and trainee.get("state") in {1, 3}:
+                return _building_error(request, "assignChar", BuildingRuleError("training_trainee_locked"), roomSlotId=room_id)
+
+    settle_building_staff(player_data)
+    settle_building_economy(player_data)
 
     old_char_num_id_lst = player_data["building"]["roomSlots"][room_id][
         "charInstIds"
