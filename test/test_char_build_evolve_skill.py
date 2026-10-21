@@ -132,14 +132,14 @@ async def test_e1_to_e2_persists_and_does_not_unlock_other_templates():
     char = prepare_amiya_evolve(player, 1)
     player["status"]["gold"] = 150000
     add_costs(player, {"3253": 3, "30014": 10, "30073": 10})
-    other_before = char["tmpl"]["char_1001_amiya2"].copy()
+    assert "char_1001_amiya2" not in char["tmpl"]
 
     await charBuild_evolveChar.__wrapped__(player, evolve_request(2))
 
     assert (char["evolvePhase"], char["level"], char["exp"]) == (2, 1, 0)
     assert player["status"]["gold"] == 30000
     assert [row["unlock"] for _, row in char["tmpl"]["char_002_amiya"]["skills"]] == [1, 1, 1]
-    assert char["tmpl"]["char_1001_amiya2"].copy() == other_before
+    assert "char_1001_amiya2" not in char["tmpl"]
     reloaded = make_player(delta, extra)
     assert reloaded["troop"]["chars"]["2"]["evolvePhase"] == 2
     assert reloaded["troop"]["chars"]["2"]["tmpl"]["char_002_amiya"]["skinId"] == "char_002_amiya#2"

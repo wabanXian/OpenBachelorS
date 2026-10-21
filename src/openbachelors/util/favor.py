@@ -11,6 +11,7 @@ from bisect import bisect_right
 
 from ..const.filepath import FAVOR_TABLE
 from .const_json_loader import const_json_loader
+from .character_loadout import validate_skill_index
 
 
 def favor_config():
@@ -77,6 +78,16 @@ def build_squad_favor_snapshot(player_data, request_json):
         else:
             current_tmpl = None
             loadout = char
+
+        requested_skill = slot.get("skillIndex", loadout.get("defaultSkillIndex"))
+        if templates and isinstance(slot.get("tmpl"), dict):
+            requested_loadout = slot["tmpl"].get(current_tmpl)
+            if isinstance(requested_loadout, dict):
+                requested_skill = requested_loadout.get("skillIndex", requested_skill)
+        try:
+            validate_skill_index(char, requested_skill, current_tmpl)
+        except ValueError:
+            return None, "squad_skill_not_unlocked"
 
         requested_equip = slot.get("currentEquip")
         if templates and isinstance(slot.get("tmpl"), dict):

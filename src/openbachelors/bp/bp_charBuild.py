@@ -26,6 +26,13 @@ from ..util.tutorial_debug import event
 from ..util.mission_lifecycle import apply_mission_event, reconcile_visible_missions
 from ..util.operator_skin import default_evolve_skin, default_template_skin, OperatorSkinError
 from ..util.faketime import faketime
+from ..util.character_loadout import (
+    active_loadout,
+    build_template_loadout,
+    template_is_unlocked,
+    validate_skin_equip,
+    validate_skill_index,
+)
 
 router = APIRouter()
 
@@ -1043,25 +1050,28 @@ async def charBuild_completeUpgradeSpecialization(player_data, request: Request)
 @player_data_decorator
 async def charBuild_setDefaultSkill(player_data, request: Request):
     request_json = await request.json()
-
-    char_num_id = request_json["charInstId"]
-    default_skill_index = request_json["defaultSkillIndex"]
-
-    if (
-        "currentTmpl" in player_data["troop"]["chars"][str(char_num_id)]
-        and player_data["troop"]["chars"][str(char_num_id)]["currentTmpl"] is not None
-    ):
-        tmpl_id = player_data["troop"]["chars"][str(char_num_id)]["currentTmpl"]
-        player_data["troop"]["chars"][str(char_num_id)]["tmpl"][tmpl_id][
-            "defaultSkillIndex"
-        ] = default_skill_index
-    else:
-        player_data["troop"]["chars"][str(char_num_id)]["defaultSkillIndex"] = (
-            default_skill_index
-        )
-
-    response = {}
-    return response
+    char_inst_id = request_json.get("charInstId")
+    skill_index = request_json.get("defaultSkillIndex")
+    if not isinstance(char_inst_id, int) or isinstance(char_inst_id, bool):
+        raise HTTPException(status_code=400, detail="invalid_char_inst_id")
+    chars, key = player_data["troop"]["chars"], str(char_inst_id)
+    if key not in chars:
+        raise HTTPException(status_code=400, detail="character_not_found")
+    char = chars[key]
+    try:
+        loadout, template_id = validate_skill_index(char, skill_index)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    loadout["defaultSkillIndex"] = skill_index
+    event(
+        request,
+        "character_default_skill_changed",
+        charInstId=char_inst_id,
+        charId=char["charId"],
+        templateId=template_id,
+        defaultSkillIndex=skill_index,
+    )
+    return {}
 
 
 @router.post("/charBuild/setEquipment")
@@ -1204,23 +1214,31 @@ async def charBuild_setCharVoiceLan(player_data, request: Request):
 @player_data_decorator
 async def charBuild_changeCharSkin(player_data, request: Request):
     request_json = await request.json()
-
-    char_num_id = request_json["charInstId"]
-    skin_id = request_json["skinId"]
-
-    if (
-        "currentTmpl" in player_data["troop"]["chars"][str(char_num_id)]
-        and player_data["troop"]["chars"][str(char_num_id)]["currentTmpl"] is not None
-    ):
-        tmpl_id = player_data["troop"]["chars"][str(char_num_id)]["currentTmpl"]
-        player_data["troop"]["chars"][str(char_num_id)]["tmpl"][tmpl_id]["skinId"] = (
-            skin_id
-        )
+    char_inst_id = request_json.get("charInstId")
+    skin_id = request_json.get("skinId")
+    if not isinstance(char_inst_id, int) or isinstance(char_inst_id, bool):
+        raise HTTPException(status_code=400, detail="invalid_char_inst_id")
+    chars, key = player_data["troop"]["chars"], str(char_inst_id)
+    if key not in chars:
+        raise HTTPException(status_code=400, detail="character_not_found")
+    char = chars[key]
+    try:
+        loadout, template_id = validate_skin_equip(player_data, char, skin_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if template_id:
+        loadout["skinId"] = skin_id
     else:
-        player_data["troop"]["chars"][str(char_num_id)]["skin"] = skin_id
-
-    response = {}
-    return response
+        char["skin"] = skin_id
+    event(
+        request,
+        "character_skin_changed",
+        charInstId=char_inst_id,
+        charId=char["charId"],
+        templateId=template_id,
+        skinId=skin_id,
+    )
+    return {}
 
 
 @router.post("/charBuild/batchSetCharVoiceLan")
@@ -1256,14 +1274,40 @@ async def charBuild_batchSetCharVoiceLan(player_data, request: Request):
 @player_data_decorator
 async def charBuild_changeCharTemplate(player_data, request: Request):
     request_json = await request.json()
-
-    char_num_id = request_json["charInstId"]
-    tmpl_id = request_json["templateId"]
-
-    player_data["troop"]["chars"][str(char_num_id)]["currentTmpl"] = tmpl_id
-
-    response = {}
-    return response
+    char_inst_id = request_json.get("charInstId")
+    template_id = request_json.get("templateId")
+    if (
+        not isinstance(char_inst_id, int)
+        or isinstance(char_inst_id, bool)
+        or not isinstance(template_id, str)
+    ):
+        raise HTTPException(status_code=400, detail="invalid_change_template_request")
+    chars, key = player_data["troop"]["chars"], str(char_inst_id)
+    if key not in chars:
+        raise HTTPException(status_code=400, detail="character_not_found")
+    char = chars[key]
+    if not template_is_unlocked(player_data, char, template_id):
+        raise HTTPException(status_code=400, detail="character_template_not_unlocked")
+    templates = char["tmpl"] if "tmpl" in char else {}
+    if template_id not in templates:
+        loadout = build_template_loadout(char.copy(), template_id)
+        char["tmpl"][template_id] = loadout
+        skin_id = loadout["skinId"]
+        player_data["skin"]["characterSkins"][skin_id] = 1
+        if skin_id not in player_data["skin"]["skinTs"]:
+            player_data["skin"]["skinTs"][skin_id] = int(faketime())
+    active_loadout(char, template_id)
+    previous = char["currentTmpl"] if "currentTmpl" in char else None
+    char["currentTmpl"] = template_id
+    event(
+        request,
+        "character_template_changed",
+        charInstId=char_inst_id,
+        charId=char["charId"],
+        previousTemplateId=previous,
+        templateId=template_id,
+    )
+    return {}
 
 
 @router.post("/charBuild/addonStage/battleStart")

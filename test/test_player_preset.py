@@ -88,7 +88,10 @@ def test_initial_operators_are_unupgraded_and_squads_are_empty():
         assert [skill["skillId"] for skill in char["skills"]] == [
             skill["skillId"] for skill in source["skills"]
         ]
-        assert set(char.get("tmpl", {})) == set(source.get("tmpl", {}))
+        if source.get("tmpl"):
+            assert set(char.get("tmpl", {})) == {char["currentTmpl"]}
+        else:
+            assert not char.get("tmpl")
         assert char.get("currentTmpl") == source.get("currentTmpl")
 
     for squad in preset["troop"]["squads"].values():

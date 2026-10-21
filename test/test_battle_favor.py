@@ -44,8 +44,8 @@ def amiya_slot():
     }
 
 
-def ordinary_slot(inst_id):
-    return {"charInstId": inst_id, "skillIndex": 0, "currentEquip": None}
+def ordinary_slot(inst_id, skill_index=-1):
+    return {"charInstId": inst_id, "skillIndex": skill_index, "currentEquip": None}
 
 
 def start(value, formation, ts=100, stage_id="main_00-01"):

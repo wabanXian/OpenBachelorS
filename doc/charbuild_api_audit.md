@@ -59,7 +59,20 @@
 - 全部接口沿用 `player_data_decorator`、OverlayJson 差量和现有存档事务；所有校验在扣费前完成。
 - 不会在登录时修改现有干员、赠送信物或材料、开放训练室或解锁模组。
 - HTTP 重放没有通用请求 ID。潜能与专精保存窄范围操作日志；模组因状态单调变化而在重放时安全拒绝，不会二次扣费。
-- `setDefaultSkill`、`changeCharSkin`、`changeCharTemplate` 保留原行为，本轮只补充模组 loadout 合法性。
+- `setDefaultSkill`、`changeCharSkin`、`changeCharTemplate` 已改为 GameData 驱动的合法性校验；不会再因请求参数直接改写未解锁的技能、皮肤或职业模板。
+
+## 2026-10-21 装扮、默认技能与职业模板校验
+
+- `POST /charBuild/changeCharSkin`：校验干员归属、皮肤所属干员及职业模板、内置立绘精英阶段，以及普通时装的 `skin.characterSkins` 拥有状态。切换只修改当前 loadout，不新增或删除皮肤资产。
+- `POST /charBuild/setDefaultSkill`：严格校验整数索引、技能列表范围、存档解锁位和 GameData 的精英阶段/等级条件。多职业干员只修改当前模板的 `defaultSkillIndex`。
+- 编队保存与战斗开场会验证请求中的技能索引；非法技能拒绝请求，不自动重写玩家已有编队。
+- `POST /charBuild/changeCharTemplate`：区分职业解锁与已解锁职业切换。阿米娅近卫由 `main_08-16` PASS 解锁，医疗由 `main_14-20` PASS 解锁，条件来自 `char_patch_table.json`。
+- 普通账号不再继承 sandbox 的全部 `tmpl`。关卡结算在同一持久化事务中创建刚解锁模板；旧存档登录时仅幂等补齐已满足条件但缺失的模板，不删除未知旧数据，也不提前开放后续职业。
+- PC 2.7.81 定向证据：`PlayerCharacter.IsTmplUnlocked` 的本地实现以角色 `tmpl` 字典是否包含目标模板作为最终判定，因此未解锁模板不能预先放进正常账号存档。
+- `POST /user/changeSecretary`：只更新 `status.secretary` 与 `status.secretarySkinId`，并复用角色/皮肤合法性校验，不再替换整个 `status`。
+- 潜能接口及 `resultOneSuc=1` 成功协议未改动。
+
+自动化状态：皮肤、默认技能、职业条件、模板状态隔离、Overlay 重载、编队非法技能拒绝和秘书字段保护均有隔离测试。Windows PC 上的皮肤 UI、默认技能 UI，以及后期阿米娅职业解锁动画仍需实机验证；当前主线 2-8 的真实账号不会被修改或提前解锁。
 
 ## 协议与资源依据
 

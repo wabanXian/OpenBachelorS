@@ -75,8 +75,8 @@ def test_patch_operator_templates_use_builtin_patch_map_not_sandbox_outfits():
     )
     assert amiya["skin"] is None
     assert amiya["tmpl"]["char_002_amiya"]["skinId"] == "char_002_amiya#1"
-    assert amiya["tmpl"]["char_1001_amiya2"]["skinId"] == "char_1001_amiya2#2"
-    assert amiya["tmpl"]["char_1037_amiya3"]["skinId"] == "char_1037_amiya3#2"
+    assert "char_1001_amiya2" not in amiya["tmpl"]
+    assert "char_1037_amiya3" not in amiya["tmpl"]
 
 
 def test_evolve_skin_map_is_phase_specific_and_does_not_select_outfits():

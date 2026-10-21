@@ -56,6 +56,11 @@ def _normalise_char(char_obj, level=1):
     normalise_loadout(char_obj)
     for loadout in char_obj.get("tmpl", {}).values():
         normalise_loadout(loadout)
+    # Sandbox contains every profession patch. A normal account owns only the
+    # default template until the resource-defined main-story condition is met.
+    current_tmpl = char_obj.get("currentTmpl")
+    if current_tmpl and current_tmpl in char_obj.get("tmpl", {}):
+        char_obj["tmpl"] = {current_tmpl: char_obj["tmpl"][current_tmpl]}
     return equip_resource_default_skin(char_obj, evolve_phase=0)
 
 

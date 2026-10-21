@@ -18,6 +18,7 @@ from .mainline_unlock import unlock_conditions_for
 from .mission_lifecycle import plan_mission_events
 from .module_mission_lifecycle import plan_module_battle_missions
 from .campaign_lifecycle import plan_campaign_unlocks
+from .character_loadout import plan_template_unlocks
 from .player_progression import plan_player_exp_gain
 from .reward_grant import plan_reward
 from .settlement_rules import get_stage_rule
@@ -507,6 +508,11 @@ def prepare_battle_finish(player_data, decoded, raw_data):
         )
         mutations.extend(campaign_mutations)
         rewards["campaignChanges"] = campaign_changes
+        template_mutations, template_changes = plan_template_unlocks(
+            player_data, future
+        )
+        mutations.extend(template_mutations)
+        rewards["characterTemplateChanges"] = template_changes
         if stage["stageType"] == "MAIN":
             mutations.append({"path": ["status", "mainStageProgress"], "value": stage_id})
 
