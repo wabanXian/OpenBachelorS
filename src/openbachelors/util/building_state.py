@@ -225,6 +225,30 @@ def deliver_trade_order(player_data, slot_id, order_id):
     }
 
 
+def deliver_trade_orders_batch(player_data, slot_ids):
+    if not isinstance(slot_ids, list) or any(not isinstance(value, str) for value in slot_ids):
+        raise BuildingRuleError("invalid_trade_slot_list")
+    plans, totals = [], {}
+    for slot_id in slot_ids:
+        room = player_data["building"]["rooms"]["TRADING"].copy().get(slot_id)
+        if not isinstance(room, dict):
+            raise BuildingRuleError("trading_room_not_found")
+        stock = room.get("stock", [])
+        stock = stock.copy() if hasattr(stock, "copy") else stock
+        for order in stock:
+            for item in order.get("delivery", []):
+                totals[item["id"]] = totals.get(item["id"], 0) + int(item["count"])
+            plans.append((slot_id, int(order["instId"]), deepcopy(order["gain"])))
+    for item_id, count in totals.items():
+        if _inventory_count(player_data, item_id) < count:
+            raise BuildingRuleError(f"insufficient_item:{item_id}")
+    delivered = {}
+    for slot_id, order_id, gain in plans:
+        deliver_trade_order(player_data, slot_id, order_id)
+        delivered.setdefault(slot_id, []).append(gain)
+    return delivered
+
+
 def validate_building_structure(player_data):
     """Return protocol-shape problems without mutating player data.
 
@@ -472,7 +496,7 @@ def _clean_cost(player_data, slot_id):
             and int(existing_slot.get("state", -1)) == 2
         )
         is_empty_output = (
-            existing_layout.get("category") == "OUTPUT"
+            existing_layout.get("category") in {"OUTPUT", "CUSTOM"}
             and existing_slot.get("roomId") == "NONE"
             and int(existing_slot.get("level", -1)) == 0
             and int(existing_slot.get("state", -1)) == 0
@@ -505,7 +529,7 @@ def clean_room_slot(player_data, slot_id):
             and slot_values.get("roomId") == layout_category
         ):
             return {"items": [], "providedLabor": 0, "alreadyApplied": True}
-        if layout_category == "OUTPUT" and slot_values == EMPTY_OUTPUT_ROOM:
+        if layout_category in {"OUTPUT", "CUSTOM"} and slot_values == EMPTY_OUTPUT_ROOM:
             return {"items": [], "providedLabor": 0, "alreadyApplied": True}
         is_empty_slot = int(slot_values.get("level", 0)) == 0
         if is_empty_slot and int(slot_values.get("state", 0)) == 2:
@@ -527,11 +551,13 @@ def clean_room_slot(player_data, slot_id):
             raise BuildingRuleError("room_slot_already_clean")
     items, provided_labor = _clean_cost(player_data, slot_id)
     layout_category = _layout_slot(slot_id)["category"]
+    if layout_category not in {"OUTPUT", "CUSTOM", "ELEVATOR", "CORRIDOR"}:
+        raise BuildingRuleError("unsupported_clean_slot_category")
     _consume_items(player_data, items)
     if slot_id not in player_data["building"]["roomSlots"]:
         player_data["building"]["roomSlots"][slot_id] = {}
     slot = player_data["building"]["roomSlots"][slot_id]
-    if layout_category == "OUTPUT":
+    if layout_category in {"OUTPUT", "CUSTOM"}:
         for key, value in EMPTY_OUTPUT_ROOM.items():
             slot[key] = deepcopy(value)
     elif layout_category in {"ELEVATOR", "CORRIDOR"}:
@@ -654,7 +680,7 @@ def build_or_upgrade_room(player_data, slot_id, room_type, target_level=1):
     current_level = int(slot_values.get("level", 0))
     current_type = slot_values.get("roomId")
     if current_level == 0 and not (
-        layout["category"] == "OUTPUT"
+        layout["category"] in {"OUTPUT", "CUSTOM"}
         and int(slot_values.get("state", -1)) == 0
         and current_type == "NONE"
         and slot_values.get("charInstIds") == []

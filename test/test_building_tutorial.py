@@ -228,6 +228,18 @@ def test_part11_trade_readiness_and_order_seed_are_exact_and_idempotent():
     assert len(player["building"]["rooms"]["TRADING"]["slot_24"]["stock"]) == 1
 
 
+def test_custom_slot_clean_is_empty_buildable_and_atomic():
+    player = fresh_player()
+    player["inventory"]["3131"] = 2
+    before = player["inventory"].copy().get("3131", 0)
+    result = clean_room_slot(player, "slot_28")
+    assert result["providedLabor"] == 2
+    assert player["building"]["roomSlots"]["slot_28"].copy() == EMPTY_OUTPUT_ROOM
+    assert player["inventory"]["3131"] == before - 1
+    assert clean_room_slot(player, "slot_28")["alreadyApplied"] is True
+    assert player["inventory"]["3131"] == before - 1
+
+
 def test_part11_order_is_not_seeded_without_exact_tutorial_state():
     player = prepare_part11_player()
     player["status"]["progress"] = 1110

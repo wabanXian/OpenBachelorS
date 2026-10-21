@@ -7,6 +7,7 @@ from openbachelors.util.building_economy import (
     settle_trading_room,
 )
 from openbachelors.util.building_state import deliver_trade_order
+from openbachelors.util.building_state import deliver_trade_orders_batch
 
 from .test_building_tutorial import prepare_part11_player
 
@@ -91,3 +92,14 @@ def test_trade_order_ids_are_never_reused_after_stock_becomes_empty():
         assert "trade_order_not_found" in str(exc)
     else:
         raise AssertionError("old delivery request matched a new order")
+
+
+def test_batch_delivery_settles_all_orders_and_old_ids_stay_dead():
+    player = economy_player(); player["inventory"]["3003"] = 20
+    settle_trading_room(player, "slot_24", 1000 + 8640 * 2)
+    ids = [x["instId"] for x in player["building"]["rooms"]["TRADING"]["slot_24"]["stock"].copy()]
+    delivered = deliver_trade_orders_batch(player, ["slot_24"])
+    assert len(delivered["slot_24"]) == 2
+    assert player["building"]["rooms"]["TRADING"]["slot_24"]["stock"].copy() == []
+    settle_trading_room(player, "slot_24", 1000 + 8640 * 3)
+    assert player["building"]["rooms"]["TRADING"]["slot_24"]["stock"].copy()[0]["instId"] > max(ids)

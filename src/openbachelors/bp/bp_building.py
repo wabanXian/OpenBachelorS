@@ -10,6 +10,7 @@ from ..util.building_state import (
     build_or_upgrade_room,
     clean_room_slot,
     deliver_trade_order,
+    deliver_trade_orders_batch,
     validate_building_structure,
 )
 from ..util.building_economy import (
@@ -185,7 +186,9 @@ async def building_changeManufactureSolution(player_data, request: Request):
     room["remainSolutionCnt"] = solution_count
     room["outputSolutionCnt"] = 0
     room["lastUpdateTime"] = __import__("time").time_ns() // 1_000_000_000
+    room["processPoint"] = 0
     room["completeWorkTime"] = -1
+    settle_manufacture_room(player_data, slot_id)
     event(
         request,
         "building_manufacture_solution_changed",
@@ -288,6 +291,23 @@ async def building_deliveryOrder(player_data, request: Request):
     )
     settle_trading_room(player_data, slot_id)
     return {"result": 0}
+
+
+@router.post("/building/deliveryBatchOrder")
+@player_data_decorator
+async def building_deliveryBatchOrder(player_data, request: Request):
+    body = await request.json()
+    slot_ids = body.get("slotList")
+    try:
+        for slot_id in slot_ids if isinstance(slot_ids, list) else []:
+            settle_trading_room(player_data, slot_id)
+        delivered = deliver_trade_orders_batch(player_data, slot_ids)
+        for slot_id in slot_ids:
+            settle_trading_room(player_data, slot_id)
+    except BuildingRuleError as exc:
+        return _building_error(request, "deliveryBatchOrder", exc)
+    apply_mission_event(player_data, "delivery_order", {"count": sum(len(items) for items in delivered.values())})
+    return {"delivered": delivered}
 
 
 @router.post("/building/getRecentVisitors")

@@ -43,6 +43,9 @@ def _manufact_room(player_data, slot_id):
 def settle_manufacture_room(player_data, slot_id, now=None, bonus_seconds=0):
     now = _now(now)
     room = _manufact_room(player_data, slot_id)
+    buff = room.copy().get("buff")
+    if isinstance(buff, dict) and float(buff.get("speed", 0)) < 0:
+        room["buff"]["speed"] = 0
     formula_id = room.copy().get("formulaId")
     formula = _data()["manufactFormulas"].copy().get(formula_id)
     last = int(room.copy().get("lastUpdateTime", now))
@@ -102,6 +105,9 @@ def settle_trading_room(player_data, slot_id, now=None, bonus_seconds=0):
     if not isinstance(room, dict):
         raise BuildingRuleError("trading_room_not_found")
     room = player_data["building"]["rooms"]["TRADING"][slot_id]
+    buff = room.copy().get("buff")
+    if isinstance(buff, dict) and float(buff.get("speed", 0)) < 0:
+        room["buff"]["speed"] = 0
     last = int(room.copy().get("lastUpdateTime", now))
     now = max(now, last)
     if room.copy().get("strategy") != "O_GOLD" or int(slot.get("level", 0)) != 1:
