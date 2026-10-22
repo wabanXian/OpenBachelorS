@@ -21,7 +21,8 @@ from .campaign_lifecycle import plan_campaign_unlocks
 from .character_loadout import plan_template_unlocks
 from .player_progression import plan_player_exp_gain
 from .reward_grant import plan_reward
-from .settlement_rules import get_stage_rule
+from .settlement_rules import get_stage_rule, HISTORICAL_STAGE_IDS
+from .historical_release import stage_allowed
 
 
 CLIENT_BATTLE_ID = "00000000-0000-0000-0000-000000000000"
@@ -204,6 +205,10 @@ def prepare_battle_start(player_data, request_json):
     stage_table = const_json_loader[STAGE_TABLE]["stages"]
     if stage_id not in stage_table:
         return None, "unknown_stage"
+    if stage_id in HISTORICAL_STAGE_IDS and not stage_allowed(
+        player_data, stage_id
+    ):
+        return None, "historical_release_not_selected"
     rule, rule_source = get_stage_rule(stage_id)
     if rule is None:
         return None, rule_source
@@ -310,6 +315,12 @@ def _newly_unlocked(player_data, future_stage_states):
 
     for candidate_id, candidate in stage_table:
         if candidate_id in player_data["dungeon"]["stages"]:
+            continue
+        # Empty/overlapping event prerequisites must never unlock unrelated
+        # archived content.  Only the account's selected release participates.
+        if candidate_id in HISTORICAL_STAGE_IDS and not stage_allowed(
+            player_data, candidate_id
+        ):
             continue
         conditions = unlock_conditions_for(candidate_id, candidate)
         if not conditions:

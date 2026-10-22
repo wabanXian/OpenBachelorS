@@ -32,6 +32,7 @@ from .bp import (
     bp_pay,
     bp_quest,
     bp_recalRune,
+    bp_retro,
     bp_rlv2,
     bp_sandboxPerm,
     bp_settings,
@@ -94,6 +95,7 @@ app.include_router(bp_mission.router)
 app.include_router(bp_pay.router)
 app.include_router(bp_quest.router)
 app.include_router(bp_recalRune.router)
+app.include_router(bp_retro.router)
 app.include_router(bp_rlv2.router)
 app.include_router(bp_sandboxPerm.router)
 app.include_router(bp_settings.router)

@@ -9,7 +9,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from ..const.filepath import ACTIVITY_TABLE, GACHA_TABLE, STAGE_TABLE
+from ..const.filepath import ACTIVITY_TABLE, GACHA_TABLE, STAGE_TABLE, HISTORICAL_RELEASES
 
 
 def _timestamp(value):
@@ -77,7 +77,8 @@ def _zone_candidates(stage_table, activity_id):
     return sorted(zones)
 
 
-def build_audit(activity_table, gacha_table, stage_table=None, *, candidate_limit=10):
+def build_audit(activity_table, gacha_table, stage_table=None, *, candidate_limit=10,
+                verified_releases=None):
     """Produce candidates with evidence labels, without mutating input objects."""
     basic = activity_table.get("basicInfo") or {}
     pools = gacha_table.get("gachaPoolClient") or []
@@ -97,6 +98,15 @@ def build_audit(activity_table, gacha_table, stage_table=None, *, candidate_limi
             raise ValueError(f"duplicate gacha pool ID: {pool_id}")
         known[pool_id] = pool
 
+    verified_by_activity = {}
+    for release_id, release in (verified_releases or {}).items():
+        if release.get("evidence", {}).get("status") != "verified":
+            continue
+        verified_by_activity.setdefault(release["activityId"], []).append(
+            {"releaseId": release_id, "poolIds": release["poolIds"],
+             "classification": release["poolClassification"],
+             "evidence": release["evidence"]}
+        )
     rows = []
     for activity_id, info in sorted(basic.items()):
         if not isinstance(info, dict):
@@ -141,8 +151,11 @@ def build_audit(activity_table, gacha_table, stage_table=None, *, candidate_limi
                 "poolOverlapCount": len(overlap),
                 "overlapCandidates": overlap[:candidate_limit],
                 "zonePrefixCandidates": _zone_candidates(stage_table, activity_id),
+                "verifiedReleases": verified_by_activity.get(activity_id, []),
                 "status": (
-                    "explicit_pool_id_in_activity_data"
+                    "verified_historical_release"
+                    if activity_id in verified_by_activity
+                    else "explicit_pool_id_in_activity_data"
                     if explicit
                     else "candidates_only_not_verified"
                     if overlap
@@ -176,8 +189,10 @@ def main():
     activity = json.loads(Path(ACTIVITY_TABLE).read_text(encoding="utf-8"))
     gacha = json.loads(Path(GACHA_TABLE).read_text(encoding="utf-8"))
     stages = json.loads(Path(STAGE_TABLE).read_text(encoding="utf-8"))
+    releases = json.loads(Path(HISTORICAL_RELEASES).read_text(encoding="utf-8"))["releases"]
     report = build_audit(
-        activity, gacha, stages, candidate_limit=args.candidate_limit
+        activity, gacha, stages, candidate_limit=args.candidate_limit,
+        verified_releases=releases,
     )
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)

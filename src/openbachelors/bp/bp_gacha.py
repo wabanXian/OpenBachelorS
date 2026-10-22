@@ -2,6 +2,8 @@ from copy import deepcopy
 from enum import IntEnum
 import random
 import logging
+import hashlib
+import json
 
 from fastapi import APIRouter
 from fastapi import Request
@@ -31,10 +33,92 @@ from ..util.helper import (
 )
 from ..util.faketime import faketime
 from ..util.mission_lifecycle import apply_mission_event
+from ..util.historical_release import (
+    active_pool_ids,
+    content_date,
+    historical_pool_roster,
+    historical_pool_up_info,
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+GACHA_REPLAY_KEY = "advanced_gacha_replay_v1"
+
+
+def _request_identity(request, request_json):
+    explicit = request_json.get("requestId")
+    sequence = request.headers.get("x-seqnum") or request.headers.get("seqnum")
+    if explicit is None and sequence is None:
+        return None
+    raw = json.dumps(
+        {"path": request.url.path, "requestId": explicit, "seqnum": sequence,
+         "body": request_json}, sort_keys=True, separators=(",", ":")
+    )
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def _cached_gacha_response(player_data, request_id):
+    if not request_id:
+        return None
+    entry = player_data.extra_save.save_obj.setdefault(GACHA_REPLAY_KEY, {}).get(request_id)
+    return deepcopy(entry["response"]) if entry else None
+
+
+def _cache_gacha_response(player_data, request_id, response):
+    if not request_id:
+        return
+    journal = player_data.extra_save.save_obj.setdefault(GACHA_REPLAY_KEY, {})
+    journal[request_id] = {"response": deepcopy(response)}
+    while len(journal) > 64:
+        del journal[next(iter(journal))]
+
+
+def _consume_advanced_gacha_cost(player_data, request_json, count):
+    use_tkt = int(request_json.get("useTkt", -1))
+    if use_tkt == 0:  # GachaType.Diamond: synthetic jade/orundum
+        price = 600 * count
+        if player_data["status"]["diamondShard"] < price:
+            return "insufficient_diamond_shard"
+        player_data["status"]["diamondShard"] -= price
+        return None
+    if use_tkt == 1 and count == 1:
+        item_id, amount = "7003", 1
+    elif use_tkt == 2 and count == 10:
+        item_id, amount = "7004", 1
+    elif use_tkt == 5 and count == 10:
+        item_id, amount = "7003", 10
+    else:
+        return "unsupported_gacha_payment"
+    current = int(player_data["inventory"].get(item_id, 0))
+    if current < amount:
+        return f"insufficient_item:{item_id}"
+    player_data["inventory"][item_id] = current - amount
+    return None
+
+
+def _historical_pool_error(player_data, pool_id):
+    # Existing current pools retain their old behaviour.  The audited archived
+    # pool is accepted only when its own GameData window contains the
+    # account-scoped content date; it is not tied to an activity switch.
+    if content_date(player_data) is None:
+        return None
+    scheduled_ids = {
+        item["poolId"] for _, item in const_json_loader[GACHA_TABLE]["carousel"]
+        if "poolId" in item
+    }
+    if pool_id not in scheduled_ids:
+        return None
+    if pool_id not in active_pool_ids(player_data):
+        return "historical_pool_not_in_selected_date"
+    # The permanent new-player pool has its own manager and fixed roster.  It
+    # appears in the carousel window but is not a dated standard-pool audit.
+    if pool_id.startswith("BOOT_"):
+        return None
+    if historical_pool_up_info(pool_id) is None:
+        return "historical_pool_rules_not_audited"
+    return None
 
 
 @router.post("/gacha/syncNormalGacha")
@@ -529,8 +613,32 @@ class AdvancedGachaBasicManager:
     # override this
     def gacha_getPoolDetail(self):
         gacha_pool = const_json_loader[GACHA_POOL_JSON]
-
-        self.response.update(gacha_pool.copy())
+        # Historical pool details replace nested lists.  A shallow copy would
+        # mutate the process-wide ConstJson template and leak one pool's roster
+        # into later detail requests.
+        payload = deepcopy(gacha_pool)
+        if historical_pool_up_info(self.pool_id) is not None:
+            roster = self.get_avail_char_info()
+            up = self.get_up_char_info()
+            rank = {"TIER_6": 5, "TIER_5": 4, "TIER_4": 3, "TIER_3": 2}
+            payload["detailInfo"]["availCharInfo"]["perAvailList"] = [
+                {
+                    "rarityRank": rank[rarity],
+                    "charIdList": info["char_id_lst"].copy(),
+                    "totalPercent": info["total_percent"],
+                }
+                for rarity, info in roster
+            ]
+            payload["detailInfo"]["upCharInfo"]["perCharList"] = [
+                {
+                    "rarityRank": rank[rarity],
+                    "charIdList": info["char_id_lst"].copy(),
+                    "percent": info["percent"],
+                    "count": len(info["char_id_lst"]),
+                }
+                for rarity, info in up
+            ]
+        self.response.update(payload)
 
     def gacha_choosePoolUp(self):
         self.player_data["gacha"][self.gacha_type][self.pool_id] = {
@@ -623,6 +731,12 @@ class AdvancedGachaSimpleManager(AdvancedGachaBasicManager):
     def get_basic_avail_char_info(self):
         gacha_data = const_json_loader[GACHA_DATA]
 
+        historical = historical_pool_roster(
+            self.pool_id, gacha_data["classic_avail_char_info"]
+        )
+        if historical is not None:
+            return ConstJson(historical)
+
         if self.is_classic:
             return gacha_data["classic_avail_char_info"]
         else:
@@ -639,6 +753,9 @@ class AdvancedGachaSimpleManager(AdvancedGachaBasicManager):
         gacha_data = const_json_loader[GACHA_DATA]
         if self.pool_id in gacha_data["up_char_info"]:
             return gacha_data["up_char_info"][self.pool_id]
+        historical = historical_pool_up_info(self.pool_id)
+        if historical is not None:
+            return ConstJson(historical)
         return ConstJson({})
 
     def get_char_rarity_rank(self):
@@ -1684,12 +1801,23 @@ def get_advanced_gacha_manager(player_data, request_json, response):
 async def gacha_advancedGacha(player_data, request: Request):
     request_json = await request.json()
     response = {}
+    identity = _request_identity(request, request_json)
+    cached = _cached_gacha_response(player_data, identity)
+    if cached is not None:
+        return cached
+    pool_error = _historical_pool_error(player_data, request_json.get("poolId"))
+    if pool_error:
+        return {"result": 1, "gachaError": pool_error}
+    cost_error = _consume_advanced_gacha_cost(player_data, request_json, 1)
+    if cost_error:
+        return {"result": 1, "gachaError": cost_error}
     before = player_snapshot(player_data)
 
     advanced_gacha_manager = get_advanced_gacha_manager(
         player_data, request_json, response
     )
     advanced_gacha_manager.gacha_advancedGacha()
+    _cache_gacha_response(player_data, identity, response)
 
     event(
         request,
@@ -1702,7 +1830,7 @@ async def gacha_advancedGacha(player_data, request: Request):
         before=before,
         after=player_snapshot(player_data),
         tutorialPurpose="unknown",
-        currencyConsumption="not_implemented",
+        currencyConsumption="validated_and_applied",
     )
 
     return response
@@ -1713,11 +1841,22 @@ async def gacha_advancedGacha(player_data, request: Request):
 async def gacha_tenAdvancedGacha(player_data, request: Request):
     request_json = await request.json()
     response = {}
+    identity = _request_identity(request, request_json)
+    cached = _cached_gacha_response(player_data, identity)
+    if cached is not None:
+        return cached
+    pool_error = _historical_pool_error(player_data, request_json.get("poolId"))
+    if pool_error:
+        return {"result": 1, "gachaError": pool_error}
+    cost_error = _consume_advanced_gacha_cost(player_data, request_json, 10)
+    if cost_error:
+        return {"result": 1, "gachaError": cost_error}
 
     advanced_gacha_manager = get_advanced_gacha_manager(
         player_data, request_json, response
     )
     advanced_gacha_manager.gacha_tenAdvancedGacha()
+    _cache_gacha_response(player_data, identity, response)
 
     return response
 

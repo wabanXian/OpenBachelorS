@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "releases": {
+    "code_of_brawl_original": {
+      "activityId": "act5d0",
+      "activityType": "TYPE_ACT5D0",
+      "retroId": "permanent_sidestory_3_Code_Of_Brawl",
+      "entryStageId": "act5d0_01",
+      "stagePrefix": "act5d0_",
+      "clientTimestamp": 1574236800,
+      "poolIds": ["NORM_5_0_1"],
+      "poolClassification": "activity_debut_standard_headhunting",
+      "evidence": {
+        "local": [
+          "activity_table.basicInfo.act5d0 schedule",
+          "gacha_table.gachaPoolClient.NORM_5_0_1 exact schedule",
+          "retro_table.permanent_sidestory_3_Code_Of_Brawl.linkedActId"
+        ],
+        "external": "https://prts.wiki/w/%E5%96%A7%E9%97%B9%E6%B3%95%E5%88%99/%E6%B4%BB%E5%8A%A8%E5%85%AC%E5%91%8A",
+        "status": "verified"
+      }
+    }
+  }
+}

@@ -10,6 +10,12 @@ from ..const.filepath import (
     STAGE_TABLE,
 )
 from .const_json_loader import const_json_loader
+from .historical_release import historical_stage_rule, release_definitions, release_stage_ids
+
+
+HISTORICAL_STAGE_IDS = set().union(
+    *(release_stage_ids(release) for _, release in release_definitions())
+)
 
 
 def _missions_for_stage(stage_id):
@@ -36,6 +42,8 @@ def _missions_for_stage(stage_id):
 
 
 def get_stage_rule(stage_id):
+    if stage_id in HISTORICAL_STAGE_IDS:
+        return historical_stage_rule(stage_id), "verified_historical_release_rule"
     generated = const_json_loader[GENERATED_STAGE_SETTLEMENT_RULES]["stages"]
     if stage_id in generated:
         rule = generated[stage_id].copy()

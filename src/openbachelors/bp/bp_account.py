@@ -16,6 +16,12 @@ from ..util.mail_helper import get_player_mailbox
 from ..util.faketime import faketime
 from ..util.log_helper import IS_DEBUG
 from ..util.tutorial_debug import event, player_snapshot
+from ..util.historical_release import (
+    content_date,
+    content_timestamp,
+    enabled_content,
+    reconcile_historical_release,
+)
 
 router = APIRouter()
 
@@ -88,9 +94,10 @@ async def account_syncData(request: Request):
         responseBodyLogging="suppressed",
     )
 
-    t = int(faketime())
-    player_data["status"]["lastRefreshTs"] = t
-    ap_recovery = recover_ap(player_data, t)
+    server_t = int(faketime())
+    historical_changes = reconcile_historical_release(player_data)
+    player_data["status"]["lastRefreshTs"] = server_t
+    ap_recovery = recover_ap(player_data, server_t)
     if ap_recovery["kind"] != "unchanged":
         event(
             request,
@@ -132,10 +139,24 @@ async def account_syncData(request: Request):
 
     response = {
         "result": 0,
-        "ts": t,
+        # Never bend the global/account clock to select historical content:
+        # several archived activities and pools may be enabled concurrently.
+        "ts": server_t,
         "user": player_data_json_obj,
         "playerDataDelta": {"modified": {}, "deleted": {}},
     }
+    if historical_changes:
+        event(
+            request,
+            "historical_release_reconciled",
+            contentDate=str(content_date(player_data)) if content_date(player_data) else None,
+            enabledActivities=sorted(enabled_content(player_data)["activities"]),
+            enabledPools=sorted(enabled_content(player_data)["pools"]),
+            permanentRetroCount=len(enabled_content(player_data)["permanentRetros"]),
+            changes=historical_changes,
+            serverTimestamp=server_t,
+            clientTimestamp=response["ts"],
+        )
     return Response(content=orjson.dumps(response), media_type="application/json")
 
 
@@ -145,6 +166,25 @@ async def account_syncStatus(player_data, request: Request):
     request_json = await request.json()
     response = {"result": {}}
     return response
+
+
+@router.post("/account/historicalContentDate")
+@player_data_decorator
+async def account_historicalContentDate(player_data, request: Request):
+    """Return the authenticated account's content-only clock to the PC shim.
+
+    The endpoint intentionally exposes neither a mutation nor the global game
+    clock.  OpenBachelorC must authenticate with the same ``secret`` used by
+    the game login before it enables the narrowly-scoped gacha filter hook.
+    """
+    selected = content_date(player_data)
+    return {
+        "result": 0,
+        "mode": "historical" if selected is not None else "realtime",
+        "date": selected.isoformat() if selected is not None else None,
+        "contentTs": content_timestamp(player_data) if selected is not None else None,
+        "account": player_data.username,
+    }
 
 
 @router.post("/account/syncPushMessage")
