@@ -1,5 +1,10 @@
 from copy import deepcopy
 import asyncio
+import json
+from types import SimpleNamespace
+
+import pytest
+from fastapi import HTTPException
 
 from openbachelors.bp.bp_gacha import (
     _cache_gacha_response,
@@ -10,6 +15,7 @@ from openbachelors.bp.bp_gacha import (
 )
 from openbachelors.bp.bp_account import account_historicalContentDate
 import openbachelors.tool.historical_content_save as date_tool
+import openbachelors.util.historical_release as historical_release
 from openbachelors.tool.historical_content_save import reset_date, set_date, show_date
 from openbachelors.util.extra_save import ExtraSave
 from openbachelors.util.battle_settlement import (
@@ -25,6 +31,7 @@ from openbachelors.util.historical_release import (
     active_pool_ids,
     complete_historical_story_stage,
     content_date,
+    content_date_status,
     historical_pool_up_info,
     historical_pool_roster,
     pool_allowed,
@@ -40,12 +47,25 @@ class Player(OverlayJson):
     pass
 
 
+@pytest.fixture(autouse=True)
+def isolated_global_content_date(tmp_path, monkeypatch):
+    path = tmp_path / "sav" / "historical_content.json"
+    monkeypatch.setattr(historical_release, "HISTORICAL_CONTENT_CONFIG", str(path))
+    yield path
+
+
+def write_global_date(value):
+    path = date_tool.Path(historical_release.HISTORICAL_CONTENT_CONFIG)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"schema": 1, "mode": "historical", "date": value}))
+
+
 def player_at(date=None):
     value = Player(post_tutorial_player_data_template, DeltaJson())
     extra = ExtraSave()
     extra.save_obj = ExtraSave.get_default_save_obj()
     if date:
-        extra.save_obj[CONTENT_DATE_KEY] = {"date": date, "mode": "historical"}
+        write_global_date(date)
     value.extra_save = extra
     value["dungeon"]["stages"]["main_01-10"] = {
         "stageId": "main_01-10", "completeTimes": 1, "startTimes": 1,
@@ -88,7 +108,7 @@ def test_date_switch_preserves_event_progress_and_pool_pity():
     reconcile_historical_release(player)
     player["dungeon"]["stages"]["act5d0_01"]["state"] = 3
     player["gacha"]["normal"]["NORM_5_0_1"]["cnt"] = 7
-    player.extra_save.save_obj[CONTENT_DATE_KEY] = {"date": "2025-01-01", "mode": "historical"}
+    write_global_date("2025-01-01")
     reconcile_historical_release(player)
     assert player["dungeon"]["stages"]["act5d0_01"]["state"] == 3
     assert player["gacha"]["normal"]["NORM_5_0_1"]["cnt"] == 7
@@ -209,32 +229,69 @@ def test_first_ten_guarantee_is_per_pool_and_replay_cache_is_immutable():
     assert _cached_gacha_response(player, "same-request") == response
 
 
-def test_authenticated_content_date_response_uses_only_content_clock():
+def test_loopback_content_date_response_uses_only_server_content_clock():
     player = player_at("2019-11-20")
-    player.username = "post_tutorial::isolated"
-    endpoint = account_historicalContentDate.__wrapped__
-    response = asyncio.run(endpoint(player, None))
+    request = SimpleNamespace(client=SimpleNamespace(host="127.0.0.1"))
+    response = asyncio.run(account_historicalContentDate(request))
     assert response == {
         "result": 0,
         "mode": "historical",
         "date": "2019-11-20",
         "contentTs": 1574222400,
-        "account": "post_tutorial::isolated",
     }
 
 
-def test_set_show_reset_date_is_persistent_and_backed_up(monkeypatch):
-    storage = {"kept": 1}
-    monkeypatch.setattr(date_tool, "_load", lambda path: deepcopy(storage))
-    monkeypatch.setattr(date_tool, "_backup", lambda save_dir: date_tool.Path("backup.zip"))
-    monkeypatch.setattr(date_tool, "_write", lambda path, value: (storage.clear(), storage.update(value)))
-    save_dir = date_tool.Path("isolated")
-    backup, report = set_date(save_dir, "2019-11-20", yes=True)
-    assert str(backup) == "backup.zip"
+def test_content_date_endpoint_rejects_non_loopback_and_reports_realtime(
+    isolated_global_content_date,
+):
+    remote = SimpleNamespace(client=SimpleNamespace(host="192.168.1.10"))
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(account_historicalContentDate(remote))
+    assert exc.value.status_code == 403
+
+    isolated_global_content_date.parent.mkdir(parents=True, exist_ok=True)
+    isolated_global_content_date.write_text(
+        json.dumps({"schema": 1, "mode": "realtime", "date": None}),
+        encoding="utf-8",
+    )
+    local = SimpleNamespace(client=SimpleNamespace(host="::1"))
+    assert asyncio.run(account_historicalContentDate(local)) == {
+        "result": 0,
+        "mode": "realtime",
+        "date": None,
+        "contentTs": None,
+    }
+
+
+def test_set_show_reset_date_is_server_global_and_persistent(tmp_path, monkeypatch):
+    config_path = tmp_path / "sav" / "historical_content.json"
+    monkeypatch.setattr(
+        date_tool,
+        "_backup",
+        lambda path: tmp_path / "backup.json" if path.is_file() else None,
+    )
+    backup, report = set_date(config_path, "2019-11-20", yes=True, legacy_root=tmp_path)
+    assert backup is None
     assert report["mode"] == "historical"
-    assert show_date(save_dir)["date"] == "2019-11-20"
-    backup2, report2 = reset_date(save_dir, yes=True)
-    assert str(backup2) == "backup.zip"
+    assert show_date(config_path, legacy_root=tmp_path)["date"] == "2019-11-20"
+    backup2, report2 = reset_date(config_path, yes=True, legacy_root=tmp_path)
+    assert backup2 == tmp_path / "backup.json"
     assert report2["mode"] == "realtime"
     assert report2["date"] is None
-    assert storage["kept"] == 1
+
+
+def test_legacy_account_dates_are_read_only_and_conflicts_are_reported(tmp_path):
+    for account, value in (("a", "2019-11-20"), ("b", "2020-01-01")):
+        path = tmp_path / "multi_sav" / "presets" / "post_tutorial" / account / "extra.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({CONTENT_DATE_KEY: {"date": value}}), encoding="utf-8")
+    config = tmp_path / "sav" / "historical_content.json"
+    status = content_date_status(config, tmp_path)
+    assert status["date"] is None
+    assert status["conflicts"] == ["2019-11-20", "2020-01-01"]
+    assert all(path.is_file() for path in tmp_path.rglob("extra.json"))
+
+    set_date(config, "2019-11-20", yes=True, legacy_root=tmp_path)
+    status = content_date_status(config, tmp_path)
+    assert status["date"].isoformat() == "2019-11-20"
+    assert len(status["legacy"]) == 2

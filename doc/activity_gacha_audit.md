@@ -3,7 +3,8 @@
 ## Runtime architecture
 
 Historical content no longer uses additive activity/pool allow-lists and never
-changes the account/global clock.
+changes the account/global clock.  The selected date is one S-side local
+configuration shared by all local accounts; it is not account save data.
 
 - Permanent side stories and intermezzi use `retro_table.retroActList` and the
   normal `retro.block` unlock state. They coexist and ignore the selected date.
@@ -14,8 +15,8 @@ changes the account/global clock.
   selected date is reported; pools are not opened because an activity happens
   to be active.
 - With no selected date, availability uses real server time.
-- The selected date is stored only in account `extra.json` under
-  `historical_content_date_v1`. AP recovery, building production, training,
+- The selected date is stored in ignored local file
+  `sav/historical_content.json`. AP recovery, building production, training,
   missions, timestamps in `/account/syncData`, and every other game timer keep
   using the normal server clock.
 
@@ -27,20 +28,19 @@ operators, event records, gacha records, or pity.
 Show current mode:
 
 ```powershell
-uv run historical-content-save show-date --username ACCOUNT
+uv run historical-content-save show-date
 ```
 
 Select a China-server calendar date (explicit write and ZIP backup):
 
 ```powershell
-uv run historical-content-save set-date --username ACCOUNT `
-  --date 2019-11-20 --yes
+uv run historical-content-save set-date --date 2019-11-20 --yes
 ```
 
 Return to real-time content availability (also backed up):
 
 ```powershell
-uv run historical-content-save reset-date --username ACCOUNT --yes
+uv run historical-content-save reset-date --yes
 ```
 
 The date is evaluated at 12:00 UTC+8 to avoid accidentally selecting the
@@ -114,7 +114,7 @@ temporary directory because of the local Windows ACL. No product assertion
 failed in that run.
 # Historical gacha update (2019-11-20)
 
-The account-scoped historical date now authorizes every audited normal pool in
+The server-local historical date now authorizes every audited normal pool in
 that GameData window independently of activity selection.  For 2019-11-20 the
 implemented pools are:
 
@@ -132,6 +132,12 @@ normal-pool six-star pity, per-pool first-ten five-star-or-higher guarantee,
 normal currency/ticket consumption, operator grant/duplicate conversion, and
 the existing request replay journal.
 
-`POST /account/historicalContentDate` is a read-only, session-authenticated
-bridge for OpenBachelorC.  It returns the content-only timestamp and never
-changes the server game clock.
+`POST /account/historicalContentDate` is a read-only, loopback-only bridge for
+OpenBachelorC.  It needs no account token, returns the same S-side content-only
+timestamp used by draw authorization, and never changes the server game clock.
+
+Legacy `historical_content_date_v1` entries remain untouched.  With no new
+server configuration, one unique legacy date is accepted as a compatibility
+fallback.  Conflicting legacy dates are listed by `show-date` and safely leave
+the server in realtime mode until an explicit `set-date` chooses the shared
+date.

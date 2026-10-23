@@ -1,4 +1,4 @@
-"""Set, show, or reset an account-scoped historical content date."""
+"""Set, show, or reset the server-local historical content date."""
 
 import argparse
 from datetime import datetime
@@ -6,96 +6,98 @@ import json
 from pathlib import Path
 import shutil
 
-from ..util.historical_release import CONTENT_DATE_KEY
-
-
-def save_dir_for(username):
-    if not username:
-        raise ValueError("--username is required")
-    return Path("multi_sav") / "presets" / "post_tutorial" / username
-
-
-def _load(path):
-    return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+from ..const.filepath import HISTORICAL_CONTENT_CONFIG
+from ..util.historical_release import content_date_status
 
 
 def _date_value(value):
-    # Strict calendar validation; storage remains human-auditable.
     parsed = datetime.strptime(value, "%Y-%m-%d").date()
-    return {"date": parsed.isoformat(), "mode": "historical"}
+    return {"schema": 1, "date": parsed.isoformat(), "mode": "historical"}
 
 
-def show_date(save_dir):
-    path = save_dir / "extra.json"
-    value = _load(path).get(CONTENT_DATE_KEY)
+def show_date(config_path=Path(HISTORICAL_CONTENT_CONFIG), *, legacy_root=Path(".")):
+    status = content_date_status(config_path, legacy_root)
     return {
-        "saveDir": str(save_dir),
-        "mode": "historical" if isinstance(value, dict) and value.get("date") else "realtime",
-        "date": value.get("date") if isinstance(value, dict) else None,
+        "configPath": status["configPath"],
+        "mode": status["mode"],
+        "date": status["date"].isoformat() if status["date"] else None,
+        "source": status["source"],
+        "legacySelections": status["legacy"],
+        "legacyConflicts": status["conflicts"],
         "affects": "content_availability_only",
     }
 
 
-def _backup(save_dir):
-    root = Path("save_backups") / "post_tutorial" / "historical_content"
+def _backup(path):
+    if not path.is_file():
+        return None
+    root = Path("save_backups") / "historical_content"
     root.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
-    return Path(shutil.make_archive(str(root / f"{save_dir.name}-{stamp}"), "zip", save_dir))
+    destination = root / f"historical-content-{stamp}.json"
+    shutil.copy2(path, destination)
+    return destination
 
 
 def _write(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(value, ensure_ascii=False, indent=4), encoding="utf-8")
     tmp.replace(path)
 
 
-def set_date(save_dir, value, *, yes=False):
+def set_date(config_path, value, *, yes=False, legacy_root=Path(".")):
     if not yes:
-        raise RuntimeError("refusing to modify a save without --yes")
-    path = save_dir / "extra.json"
-    current = _load(path)
+        raise RuntimeError("refusing to modify local configuration without --yes")
+    path = Path(config_path)
     desired = _date_value(value)
-    if current.get(CONTENT_DATE_KEY) == desired:
-        return None, show_date(save_dir)
-    backup = _backup(save_dir)
-    current[CONTENT_DATE_KEY] = desired
-    # Remove the obsolete additive selector so it cannot silently conflict.
-    current.pop("historical_content_v2", None)
-    _write(path, current)
-    return backup, show_date(save_dir)
+    current = None
+    if path.is_file():
+        try:
+            current = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            current = None
+    if current == desired:
+        return None, show_date(path, legacy_root=legacy_root)
+    backup = _backup(path)
+    _write(path, desired)
+    return backup, show_date(path, legacy_root=legacy_root)
 
 
-def reset_date(save_dir, *, yes=False):
+def reset_date(config_path, *, yes=False, legacy_root=Path(".")):
     if not yes:
-        raise RuntimeError("refusing to modify a save without --yes")
-    path = save_dir / "extra.json"
-    current = _load(path)
-    if CONTENT_DATE_KEY not in current and "historical_content_v2" not in current:
-        return None, show_date(save_dir)
-    backup = _backup(save_dir)
-    current.pop(CONTENT_DATE_KEY, None)
-    current.pop("historical_content_v2", None)
-    _write(path, current)
-    return backup, show_date(save_dir)
+        raise RuntimeError("refusing to modify local configuration without --yes")
+    path = Path(config_path)
+    desired = {"schema": 1, "date": None, "mode": "realtime"}
+    current = None
+    if path.is_file():
+        try:
+            current = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            current = None
+    if current == desired:
+        return None, show_date(path, legacy_root=legacy_root)
+    backup = _backup(path)
+    _write(path, desired)
+    return backup, show_date(path, legacy_root=legacy_root)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("set-date", "show-date", "reset-date"))
-    parser.add_argument("--username", required=True)
     parser.add_argument("--date")
     parser.add_argument("--yes", action="store_true")
     args = parser.parse_args()
-    save_dir = save_dir_for(args.username)
+    config_path = Path(HISTORICAL_CONTENT_CONFIG)
     if args.action == "show-date":
-        report = show_date(save_dir)
+        report = show_date(config_path)
         backup = None
     elif args.action == "set-date":
         if not args.date:
             parser.error("set-date requires --date YYYY-MM-DD")
-        backup, report = set_date(save_dir, args.date, yes=args.yes)
+        backup, report = set_date(config_path, args.date, yes=args.yes)
     else:
-        backup, report = reset_date(save_dir, yes=args.yes)
+        backup, report = reset_date(config_path, yes=args.yes)
     print(json.dumps({"backup": str(backup) if backup else None, **report}, ensure_ascii=False, indent=2))
 
 

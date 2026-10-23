@@ -3,7 +3,7 @@ import json
 from collections import Counter
 
 from fastapi import APIRouter
-from fastapi import Request
+from fastapi import HTTPException, Request
 from fastapi import Response
 import aiofiles
 import orjson
@@ -169,21 +169,17 @@ async def account_syncStatus(player_data, request: Request):
 
 
 @router.post("/account/historicalContentDate")
-@player_data_decorator
-async def account_historicalContentDate(player_data, request: Request):
-    """Return the authenticated account's content-only clock to the PC shim.
-
-    The endpoint intentionally exposes neither a mutation nor the global game
-    clock.  OpenBachelorC must authenticate with the same ``secret`` used by
-    the game login before it enables the narrowly-scoped gacha filter hook.
-    """
-    selected = content_date(player_data)
+async def account_historicalContentDate(request: Request):
+    """Return the server-local content clock to a loopback launcher only."""
+    client_host = request.client.host if request.client is not None else None
+    if client_host not in {"127.0.0.1", "::1"}:
+        raise HTTPException(status_code=403, detail="loopback_only")
+    selected = content_date()
     return {
         "result": 0,
         "mode": "historical" if selected is not None else "realtime",
         "date": selected.isoformat() if selected is not None else None,
-        "contentTs": content_timestamp(player_data) if selected is not None else None,
-        "account": player_data.username,
+        "contentTs": content_timestamp() if selected is not None else None,
     }
 
 

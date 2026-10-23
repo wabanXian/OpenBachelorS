@@ -52,6 +52,7 @@ REPLAY_DIRPATH = "sav/replay/"
 MULTI_REPLAY_DIRPATH = "multi_sav/replay/"
 
 EXTRA_SAVE_FILEPATH = "sav/extra.json"
+HISTORICAL_CONTENT_CONFIG = "sav/historical_content.json"
 
 MULTI_EXTRA_SAVE_DIRPATH = "multi_sav/"
 

@@ -1,23 +1,29 @@
 """Historical content availability without changing the game's global clock."""
 
 from datetime import datetime, timezone, timedelta
+import json
+import logging
+from pathlib import Path
 
-from ..const.filepath import ACTIVITY_TABLE, GACHA_TABLE, HISTORICAL_RELEASES, RETRO_TABLE, STAGE_TABLE
+from ..const.filepath import (
+    ACTIVITY_TABLE,
+    GACHA_TABLE,
+    HISTORICAL_CONTENT_CONFIG,
+    HISTORICAL_RELEASES,
+    RETRO_TABLE,
+    STAGE_TABLE,
+)
 from .const_json_loader import const_json_loader
 from .faketime import faketime
 
 CONTENT_DATE_KEY = "historical_content_date_v1"
 SELECTION_KEY = CONTENT_DATE_KEY  # compatibility import; list selection is retired
 CN_TZ = timezone(timedelta(hours=8))
+logger = logging.getLogger(__name__)
+_reported_legacy_conflict = None
 
 
-def release_definitions():
-    return const_json_loader[HISTORICAL_RELEASES]["releases"]
-
-
-def content_date(player_data):
-    extra = getattr(player_data, "extra_save", None)
-    value = extra.save_obj.get(CONTENT_DATE_KEY) if extra is not None else None
+def _parse_date(value):
     if not isinstance(value, dict) or not isinstance(value.get("date"), str):
         return None
     try:
@@ -26,7 +32,79 @@ def content_date(player_data):
         return None
 
 
-def content_timestamp(player_data):
+def legacy_content_dates(root=Path(".")):
+    """Read old per-account selections without mutating any save."""
+    root = Path(root)
+    paths = [root / "sav" / "extra.json"]
+    multi = root / "multi_sav"
+    if multi.is_dir():
+        paths.extend(multi.rglob("extra.json"))
+    records = []
+    for path in paths:
+        if not path.is_file():
+            continue
+        try:
+            value = json.loads(path.read_text(encoding="utf-8")).get(CONTENT_DATE_KEY)
+        except (OSError, ValueError):
+            continue
+        selected = _parse_date(value)
+        if selected is not None:
+            records.append({"path": str(path), "date": selected.isoformat()})
+    return records
+
+
+def content_date_status(config_path=None, legacy_root=Path("."), *, include_legacy=True):
+    """Resolve the one server-local content date and report legacy conflicts."""
+    path = Path(config_path or HISTORICAL_CONTENT_CONFIG)
+    legacy = legacy_content_dates(legacy_root) if include_legacy or not path.is_file() else []
+    legacy_dates = sorted({item["date"] for item in legacy})
+    conflicts = legacy_dates if len(legacy_dates) > 1 else []
+    if path.is_file():
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            value = {}
+        selected = _parse_date(value)
+        return {
+            "mode": "historical" if selected is not None else "realtime",
+            "date": selected,
+            "source": "server_config",
+            "configPath": str(path),
+            "legacy": legacy,
+            "conflicts": conflicts,
+        }
+
+    # One unique old value is a safe, read-only compatibility fallback.  It is
+    # never copied into or removed from account saves automatically.
+    selected = datetime.strptime(legacy_dates[0], "%Y-%m-%d").date() if len(legacy_dates) == 1 else None
+    return {
+        "mode": "historical" if selected is not None else "realtime",
+        "date": selected,
+        "source": "legacy_compat" if selected is not None else "default_realtime",
+        "configPath": str(path),
+        "legacy": legacy,
+        "conflicts": conflicts,
+    }
+
+
+def release_definitions():
+    return const_json_loader[HISTORICAL_RELEASES]["releases"]
+
+
+def content_date(player_data=None):
+    global _reported_legacy_conflict
+    status = content_date_status(include_legacy=False)
+    conflicts = tuple(status["conflicts"])
+    if conflicts and conflicts != _reported_legacy_conflict:
+        logger.error(
+            "conflicting legacy historical dates %s; using realtime until set-date",
+            list(conflicts),
+        )
+        _reported_legacy_conflict = conflicts
+    return status["date"]
+
+
+def content_timestamp(player_data=None):
     """Return the content-only clock; all economy timers keep using faketime()."""
     selected = content_date(player_data)
     if selected is None:
